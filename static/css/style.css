@@ -1,0 +1,161 @@
+/* ============================================= */
+/*                Global Ocean Theme             */
+/* ============================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto:wght@300;400;500&display=swap');
+
+:root {
+  --bg-dark: #020c1b;
+  --ocean-deep: #0a1f44;
+  --cyan: #00f0ff;
+  --cyan-glow: #00eaff;
+  --purple: #7c3aed;
+  --glass: rgba(10, 31, 68, 0.38);
+  --glass-border: rgba(0, 240, 255, 0.18);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: var(--bg-dark);
+  color: #e0f7ff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(0,240,255,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(124,58,237,0.06) 0%, transparent 50%);
+  position: relative;
+}
+
+/* Animated subtle waves background */
+.waves {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -2;
+  background: linear-gradient(to bottom, transparent 0%, rgba(10,31,68,0.4) 40%, var(--ocean-deep) 100%);
+}
+
+.waves::before,
+.waves::after {
+  content: '';
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,0 C150,80 350,0 500,60 C650,120 850,40 1000,80 C1150,120 1200,80 1200,80 L1200,120 L0,120 Z" fill="rgba(0,240,255,0.03)"/></svg>') repeat-x;
+  animation: wave 25s linear infinite;
+  opacity: 0.4;
+}
+
+.waves::after {
+  animation: wave 18s linear infinite reverse;
+  opacity: 0.25;
+}
+
+@keyframes wave {
+  0% { transform: translateX(0) translateZ(0) scaleY(1); }
+  50% { transform: translateX(-25%) translateZ(0) scaleY(0.95); }
+  100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
+}
+
+/* Navbar */
+.navbar {
+  background: rgba(2, 12, 27, 0.75) !important;
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0,240,255,0.12);
+  padding: 1.1rem 0;
+}
+
+.navbar-brand {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--cyan) !important;
+  text-shadow: 0 0 15px rgba(0,240,255,0.6);
+}
+
+.nav-link {
+  color: #a5d8ff !important;
+  font-weight: 500;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--cyan) !important;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -6px;
+  left: 50%;
+  background: var(--cyan);
+  transition: all 0.4s ease;
+  transform: translateX(-50%);
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 70%;
+}
+
+/* Glass card */
+.card-glass {
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+}
+
+.card-glass:hover {
+  transform: translateY(-12px);
+  box-shadow: 0 25px 60px rgba(0,240,255,0.18);
+}
+
+/* Neon button */
+.btn-neon {
+  background: linear-gradient(90deg, #00f0ff, #7c3aed, #00f0ff);
+  background-size: 200% 200%;
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 50px;
+  padding: 0.75rem 2rem;
+  box-shadow: 0 0 25px rgba(0,240,255,0.4);
+  transition: all 0.5s;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-neon:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(0,240,255,0.6);
+  animation: shine 1.5s infinite;
+}
+
+@keyframes shine {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Footer */
+.footer {
+  background: rgba(2,12,27,0.9);
+  border-top: 1px solid rgba(0,240,255,0.1);
+  padding: 2.5rem 0;
+  margin-top: 5rem;
+}

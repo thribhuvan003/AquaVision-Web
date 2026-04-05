@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <title>Dashboard — AquaVision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+    <style>
+        /* ── DASHBOARD SPECIFIC ── */
+        .page-content {
+            position: relative; z-index: 1;
+            max-width: 1200px; margin: 0 auto;
+            padding: 100px 5% 6rem;
+        }
+
+        /* Welcome header */
+        .dash-welcome {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 2rem;
+            margin-bottom: 4rem;
+            flex-wrap: wrap;
+        }
+
+        .dash-welcome-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 0.6rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .dash-welcome-eyebrow::before {
+            content: ''; width: 16px; height: 1px; background: var(--cyan);
+        }
+
+        .dash-welcome h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            color: var(--white);
+            line-height: 1.1;
+        }
+
+        .dash-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--gray-2);
+            text-align: right;
+            line-height: 1.8;
+        }
+        .dash-time strong { color: var(--off-white); font-weight: 700; }
+
+        /* ── Feature grid ── */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: rgba(255,255,255,0.05);
+            border: var(--b1);
+            margin-bottom: 1px;
+        }
+
+        .feature-card {
+            background: var(--black);
+            padding: 2.2rem 2rem;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: background 0.25s;
+        }
+
+        .feature-card:hover { background: var(--black-1); }
+
+        /* Cyan bottom border reveal on hover */
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 1px;
+            background: var(--cyan);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+        }
+        .feature-card:hover::after { transform: scaleX(1); }
+
+        .fc-icon {
+            width: 44px; height: 44px;
+            border: var(--b1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: var(--cyan);
+            margin-bottom: 2rem;
+            flex-shrink: 0;
+            transition: border-color 0.25s;
+        }
+        .feature-card:hover .fc-icon { border-color: rgba(6,214,240,0.4); }
+
+        .fc-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--gray-2);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .fc-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--white);
+            letter-spacing: -0.02em;
+            margin-bottom: 0.6rem;
+            flex: 1;
+        }
+
+        .fc-desc {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.82rem;
+            color: var(--gray-1);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .fc-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: var(--cyan);
+            border: 1px solid rgba(6,214,240,0.2);
+            padding: 0.2rem 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-top: auto;
+            width: fit-content;
+        }
+
+        .fc-arrow {
+            position: absolute;
+            top: 1.5rem; right: 1.8rem;
+            width: 28px; height: 28px;
+            border: var(--b1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: var(--gray-2);
+            transition: border-color 0.25s, color 0.25s, transform 0.25s;
+        }
+        .feature-card:hover .fc-arrow {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            transform: translateY(-1px) translateX(1px);
+        }
+
+        /* Second row — single wide strip */
+        .feature-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: rgba(255,255,255,0.05);
+            border: var(--b1);
+            border-top: none;
+            margin-bottom: 3rem;
+        }
+
+        /* ── Live stats metric row ── */
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: rgba(255,255,255,0.05);
+            border: var(--b1);
+        }
+
+        .metrics-cell {
+            background: var(--black);
+            padding: 1.8rem;
+            text-align: center;
+        }
+
+        .metrics-cell-val {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--white);
+            letter-spacing: -0.04em;
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+
+        .metrics-cell-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--gray-1);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        @media (max-width: 900px) {
+            .feature-grid { grid-template-columns: 1fr 1fr; }
+            .feature-strip { grid-template-columns: 1fr; }
+            .metrics-row { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .feature-grid { grid-template-columns: 1fr; }
+            .feature-strip { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+
+    <!-- Navigation -->
+    <nav class="nav-abyssal" role="navigation" aria-label="Main navigation">
+        <a href="{{ url_for('home') }}" class="nav-logo">
+            AquaVision <span class="nav-logo-dot" aria-hidden="true"></span>
+        </a>
+        <ul class="nav-links-abyssal" role="list">
+            <li><a href="{{ url_for('home') }}" class="active">Dashboard</a></li>
+            <li><a href="{{ url_for('prediction') }}">Enhance</a></li>
+            <li><a href="{{ url_for('video_prediction') }}">Video</a></li>
+            <li><a href="{{ url_for('batch_page') }}">Batch</a></li>
+            <li><a href="{{ url_for('my_videos') }}">My Videos</a></li>
+            <li><a href="{{ url_for('gallery') }}">Gallery</a></li>
+            <li><a href="{{ url_for('model') }}">Reports</a></li>
+            <li><a href="{{ url_for('about') }}">About</a></li>
+            <li><a href="{{ url_for('api_docs') }}">API</a></li>
+            <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
+        </ul>
+    </nav>
+
+    <div class="page-content">
+        <!-- Welcome -->
+        <div class="dash-welcome">
+            <div>
+                <div class="dash-welcome-eyebrow">Dashboard · Active Session</div>
+                <h1>Welcome back,<br>{{ user_name }}</h1>
+            </div>
+            <div class="dash-time" id="dash-clock">
+                <strong id="clock-time">--:--:--</strong><br>
+                System Ready · All Modules Online
+            </div>
+        </div>
+
+        <!-- Main feature grid -->
+        <div class="feature-grid">
+            <!-- Large card: Enhance Image -->
+            <a href="{{ url_for('prediction') }}" class="feature-card reveal" aria-label="Enhance Image">
+                <div class="fc-arrow" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="fc-icon" aria-hidden="true"><i class="fas fa-image"></i></div>
+                <div class="fc-num">01 — PRIMARY</div>
+                <div class="fc-title">Enhance<br>Image</div>
+                <div class="fc-desc">
+                    Upload a single underwater photo. MobileNetV2 diagnoses the degradation type,
+                    then the 12-stage adaptive pipeline restores colour, clarity, and detail —
+                    with full quality metrics, histogram analysis, and lossless export.
+                </div>
+                <div class="fc-badge">
+                    <i class="fas fa-bolt" aria-hidden="true"></i> 9 Classes · 93% Accuracy
+                </div>
+            </a>
+
+            <!-- Enhance Video -->
+            <a href="{{ url_for('video_prediction') }}" class="feature-card reveal" aria-label="Enhance Video">
+                <div class="fc-arrow" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="fc-icon" aria-hidden="true"><i class="fas fa-film"></i></div>
+                <div class="fc-num">02</div>
+                <div class="fc-title">Enhance Video</div>
+                <div class="fc-desc">Frame-by-frame enhancement with temporal consistency. H.264 output.</div>
+                <div class="fc-badge"><i class="fas fa-clapperboard" aria-hidden="true"></i> MP4 · AVI · MOV</div>
+            </a>
+
+            <!-- Batch -->
+            <a href="{{ url_for('batch_page') }}" class="feature-card reveal" aria-label="Batch Enhancement">
+                <div class="fc-arrow" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="fc-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></div>
+                <div class="fc-num">03</div>
+                <div class="fc-title">Batch<br>Enhance</div>
+                <div class="fc-desc">Up to 10 images at once — individually classified and enhanced.</div>
+                <div class="fc-badge"><i class="fas fa-images" aria-hidden="true"></i> Up to 10 Images</div>
+            </a>
+        </div>
+
+        <!-- Second row strip -->
+        <div class="feature-strip">
+            <a href="{{ url_for('gallery') }}" class="feature-card reveal" aria-label="Gallery">
+                <div class="fc-arrow" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="fc-icon" aria-hidden="true"><i class="fas fa-images"></i></div>
+                <div class="fc-num">04</div>
+                <div class="fc-title">Gallery</div>
+                <div class="fc-desc">Browse all past enhancements side-by-side. Download as ZIP.</div>
+                <div class="fc-badge"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> History</div>
+            </a>
+            <a href="{{ url_for('model') }}" class="feature-card reveal" aria-label="AI Reports">
+                <div class="fc-arrow" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="fc-icon" style="color: var(--indigo);" aria-hidden="true"><i class="fas fa-chart-bar"></i></div>
+                <div class="fc-num">05</div>
+                <div class="fc-title">AI Reports</div>
+                <div class="fc-desc">Per-class precision, recall, F1 · Confusion matrix for 3 architectures.</div>
+                <div class="fc-badge" style="color:var(--indigo); border-color: rgba(124,110,240,0.25);"><i class="fas fa-microscope" aria-hidden="true"></i> MobileNetV2 · ResNet · CNN</div>
+            </a>
+            <a href="{{ url_for('api_docs') }}" class="feature-card reveal" aria-label="API Access">
+                <div class="fc-arrow" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="fc-icon" style="color: var(--amber);" aria-hidden="true"><i class="fas fa-code"></i></div>
+                <div class="fc-num">06</div>
+                <div class="fc-title">API Access</div>
+                <div class="fc-desc">Authenticated REST endpoint. Token generation. Full JSON response with metrics.</div>
+                <div class="fc-badge" style="color:var(--amber); border-color: rgba(255,184,0,0.25);"><i class="fas fa-terminal" aria-hidden="true"></i> /api/v1/enhance</div>
+            </a>
+        </div>
+
+        <!-- Metrics row -->
+        <div class="metrics-row">
+            <div class="metrics-cell">
+                <span class="metrics-cell-val"><span data-countup="93" data-suffix="%">0%</span></span>
+                <span class="metrics-cell-label">Classification Accuracy</span>
+            </div>
+            <div class="metrics-cell">
+                <span class="metrics-cell-val"><span data-countup="9">0</span></span>
+                <span class="metrics-cell-label">Degradation Classes</span>
+            </div>
+            <div class="metrics-cell">
+                <span class="metrics-cell-val"><span data-countup="6">0</span></span>
+                <span class="metrics-cell-label">Quality Metrics</span>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer-abyssal" role="contentinfo">
+        <p>© 2026 AquaVision · Adaptive Quality-Aware Underwater Image Enhancement</p>
+        <p>Session: {{ user_name }} · All systems operational</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="{{ url_for('static', filename='js/abyssal.js') }}" defer></script>
+    <script>
+        // Live clock
+        function updateClock() {
+            var el = document.getElementById('clock-time');
+            if (!el) return;
+            var d = new Date();
+            var h = String(d.getHours()).padStart(2,'0');
+            var m = String(d.getMinutes()).padStart(2,'0');
+            var s = String(d.getSeconds()).padStart(2,'0');
+            el.textContent = h + ':' + m + ':' + s;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').catch(function(){});
+        }
+    </script>
+</body>
+</html>

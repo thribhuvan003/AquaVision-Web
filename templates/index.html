@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <meta name="description" content="AquaVision — AI-powered underwater image enhancement. MobileNetV2 classification meets adaptive multi-scale fusion.">
+    <link rel="manifest" href="/static/manifest.json">
+    <title>AquaVision — Deep Sea Image Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+    <style>
+        /* ── PAGE-SPECIFIC: INDEX (Landing) ── */
+
+        /* Hero */
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 0 5% 5rem;
+            position: relative;
+        }
+
+        .hero-bg-lines {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 79px, rgba(255,255,255,0.018) 80px),
+                repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(255,255,255,0.012) 80px);
+        }
+
+        .hero-grid-overlay {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 60%;
+            background: linear-gradient(to top, var(--black) 0%, transparent 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .hero-eyebrow {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+        .hero-eyebrow-line {
+            width: 40px; height: 1px;
+            background: var(--cyan);
+        }
+        .hero-eyebrow-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+        .hero-eyebrow-dot {
+            width: 5px; height: 5px;
+            background: var(--cyan);
+            border-radius: 50%;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        .hero-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(3.5rem, 10vw, 9rem);
+            font-weight: 800;
+            line-height: 0.9;
+            letter-spacing: -0.04em;
+            color: var(--white);
+            margin-bottom: 0;
+        }
+
+        .hero-title-accent {
+            color: var(--cyan);
+            display: block;
+        }
+
+        .hero-sub-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-top: 2.5rem;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .hero-desc {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            color: var(--gray-1);
+            max-width: 420px;
+            line-height: 1.7;
+        }
+
+        .hero-spec-block {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--gray-2);
+            line-height: 1.9;
+            border-left: 1px solid var(--gray-3);
+            padding-left: 1.2rem;
+        }
+        .hero-spec-block strong {
+            color: var(--off-white);
+            font-weight: 700;
+        }
+
+        .hero-cta-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 2.5rem;
+        }
+
+        /* Marquee ticker below hero */
+        .ticker-section {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* ── Stats strip ── */
+        .stats-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            border-top: var(--b0);
+            border-bottom: var(--b0);
+        }
+
+        .stat-strip-cell {
+            padding: 3rem 2rem;
+            border-right: var(--b0);
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-strip-cell:last-child { border-right: none; }
+
+        .stat-strip-num {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            color: var(--white);
+            letter-spacing: -0.04em;
+            line-height: 1;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+
+        .stat-strip-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
+            color: var(--gray-1);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Hover scan line on stats */
+        .stat-strip-cell::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 1px;
+            background: var(--cyan);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+        }
+        .stat-strip-cell:hover::after { transform: scaleX(1); }
+
+        /* ── WHAT WE DO (pipeline) ── */
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
+            color: var(--gray-1);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--black-3);
+        }
+
+        .section-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--gray-3);
+            margin-right: 0.5rem;
+        }
+
+        .big-section {
+            padding: 7rem 5%;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .section-headline {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.2rem, 5vw, 4.5rem);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            color: var(--white);
+            margin-bottom: 0.5rem;
+        }
+
+        .section-subtitle {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            color: var(--gray-1);
+            max-width: 500px;
+            line-height: 1.65;
+            margin-bottom: 4rem;
+        }
+
+        /* Pipeline steps — brutalist horizontal */
+        .pipeline-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1px;
+            background: rgba(255,255,255,0.05);
+            border: var(--b1);
+            margin-bottom: 5rem;
+        }
+
+        .pipeline-cell {
+            background: var(--black);
+            padding: 2rem 1.5rem;
+            position: relative;
+            transition: background 0.25s;
+        }
+        .pipeline-cell:hover { background: var(--black-1); }
+
+        .pipeline-cell-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--cyan);
+            font-weight: 700;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        .pipeline-cell-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--white);
+            margin-bottom: 0.6rem;
+        }
+
+        .pipeline-cell-desc {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.78rem;
+            color: var(--gray-1);
+            line-height: 1.55;
+        }
+
+        /* After pipeline cell link arrow top right */
+        .pipeline-arrow-icon {
+            position: absolute;
+            top: 1.2rem; right: 1.2rem;
+            width: 24px; height: 24px;
+            border: 1px solid var(--black-3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: var(--gray-2);
+            border-radius: 1px;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .pipeline-cell:hover .pipeline-arrow-icon {
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        /* ── Degradation modes grid ── */
+        .modes-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: rgba(255,255,255,0.05);
+            border: var(--b1);
+        }
+
+        .mode-cell {
+            background: var(--black);
+            padding: 2rem;
+            position: relative;
+            cursor: default;
+            transition: background 0.25s;
+        }
+        .mode-cell:hover { background: rgba(6,214,240,0.025); }
+
+        .mode-cell-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--black-2);
+            position: absolute;
+            top: 0.5rem; right: 1rem;
+            line-height: 1;
+            user-select: none;
+        }
+
+        .mode-cell-name {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--white);
+            margin-bottom: 0.4rem;
+            position: relative;
+        }
+
+        .mode-cell-desc {
+            font-size: 0.78rem;
+            color: var(--gray-1);
+            line-height: 1.5;
+        }
+
+        .mode-cell-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-top: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--cyan);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .mode-cell-tag::before {
+            content: '';
+            width: 6px; height: 6px;
+            background: var(--cyan);
+            border-radius: 50%;
+        }
+
+        /* ── Benchmark table section ── */
+        .bench-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: var(--b1);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .bench-table th {
+            padding: 0.9rem 1.2rem;
+            text-align: left;
+            font-size: 0.6rem;
+            color: var(--gray-1);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: var(--b1);
+            background: var(--black-1);
+        }
+        .bench-table td {
+            padding: 0.85rem 1.2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            color: var(--off-white);
+        }
+        .bench-table tr:hover td { background: rgba(6,214,240,0.022); }
+        .bench-table .best { color: var(--cyan); font-weight: 700; }
+        .bench-table .ours { color: var(--white); font-weight: 700; background: rgba(6,214,240,0.04); }
+
+        /* ── CTA block ── */
+        .cta-block {
+            padding: 7rem 5%;
+            text-align: center;
+            border-top: var(--b0);
+            border-bottom: var(--b0);
+            position: relative;
+        }
+        .cta-block::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(6,214,240,0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta-block h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            color: var(--white);
+            margin-bottom: 1rem;
+        }
+        .cta-block p {
+            font-size: 1rem;
+            color: var(--gray-1);
+            max-width: 450px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.65;
+        }
+
+        @media (max-width: 900px) {
+            .stats-strip { grid-template-columns: repeat(2, 1fr); }
+            .pipeline-row { grid-template-columns: repeat(2, 1fr); }
+            .modes-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .hero-title { font-size: 3rem; }
+            .stats-strip { grid-template-columns: 1fr; }
+            .pipeline-row { grid-template-columns: 1fr; }
+            .modes-grid { grid-template-columns: 1fr; }
+            .hero-sub-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom cursor -->
+
+
+    <!-- Grid background -->
+    <div class="hero-bg-lines" aria-hidden="true"></div>
+
+    <!-- Navigation -->
+    <nav class="nav-abyssal" role="navigation" aria-label="Main navigation">
+        <a href="{{ url_for('index') }}" class="nav-logo">
+            AquaVision
+            <span class="nav-logo-dot" aria-hidden="true"></span>
+        </a>
+        <ul class="nav-links-abyssal" role="list">
+            <li><a href="#pipeline">How It Works</a></li>
+            <li><a href="#modes">9 Modes</a></li>
+            <li><a href="{{ url_for('about') }}">Research</a></li>
+            {% if session.get('user_email') %}
+            <li><a href="{{ url_for('home') }}" class="nav-cta">Dashboard →</a></li>
+            {% else %}
+            <li><a href="{{ url_for('login') }}">Sign In</a></li>
+            <li><a href="{{ url_for('register') }}" class="nav-cta">Get Access →</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <!-- ═══ HERO ═══ -->
+    <section class="hero-section" aria-labelledby="hero-heading">
+        <div class="hero-grid-overlay" aria-hidden="true"></div>
+        <div class="hero-content">
+            <div class="hero-eyebrow">
+                <span class="hero-eyebrow-line" aria-hidden="true"></span>
+                <span class="hero-eyebrow-text">Underwater AI · 2026 Build</span>
+                <span class="hero-eyebrow-dot" aria-hidden="true"></span>
+            </div>
+            <h1 class="hero-title" id="hero-heading">
+                AQUA
+                <span class="hero-title-accent">VISION</span>
+            </h1>
+            <div class="hero-sub-row">
+                <p class="hero-desc">
+                    MobileNetV2 classifies your underwater image across 9 degradation
+                    modes. A 12-stage physics-guided pipeline restores colour, clarity, and detail.
+                </p>
+                <div class="hero-spec-block">
+                    <div>[CLASS] <strong>9 Degradation Modes</strong></div>
+                    <div>[MODEL] <strong>MobileNetV2 — 93% Accuracy</strong></div>
+                    <div>[OUTPUT] <strong>Lanczos4 Super-Resolution</strong></div>
+                    <div>[METRICS] <strong>UCIQE · UIQM · PSNR · SSIM</strong></div>
+                </div>
+            </div>
+            <div class="hero-cta-row">
+                {% if session.get('user_email') %}
+                <a href="{{ url_for('prediction') }}" class="btn-primary">
+                    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                    Enhance Image
+                </a>
+                <a href="{{ url_for('video_prediction') }}" class="btn-outline">
+                    <i class="fas fa-film" aria-hidden="true"></i>
+                    Enhance Video
+                </a>
+                {% else %}
+                <a href="{{ url_for('register') }}" class="btn-primary">
+                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    Get Started Free
+                </a>
+                <a href="{{ url_for('login') }}" class="btn-outline">Sign In</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ TICKER ═══ -->
+    <div class="ticker-section" aria-hidden="true">
+        <div class="ticker-bar" role="marquee">
+            <div class="ticker-track">
+                <span>Adaptive Enhancement Pipeline</span><span class="ticker-sep">·</span>
+                <span>MobileNetV2 Classifier</span><span class="ticker-sep">·</span>
+                <span>9 Degradation Modes</span><span class="ticker-sep">·</span>
+                <span>93% Classification Accuracy</span><span class="ticker-sep">·</span>
+                <span>CLAHE + Guided Filter Fusion</span><span class="ticker-sep">·</span>
+                <span>Lanczos4 Super-Resolution</span><span class="ticker-sep">·</span>
+                <span>UCIQE · UIQM · PSNR · SSIM Metrics</span><span class="ticker-sep">·</span>
+                <span>Frame-by-Frame Video Enhancement</span><span class="ticker-sep">·</span>
+                <span>API Access Available</span><span class="ticker-sep">·</span>
+                <!-- duplicate for seamless loop -->
+                <span>Adaptive Enhancement Pipeline</span><span class="ticker-sep">·</span>
+                <span>MobileNetV2 Classifier</span><span class="ticker-sep">·</span>
+                <span>9 Degradation Modes</span><span class="ticker-sep">·</span>
+                <span>93% Classification Accuracy</span><span class="ticker-sep">·</span>
+                <span>CLAHE + Guided Filter Fusion</span><span class="ticker-sep">·</span>
+                <span>Lanczos4 Super-Resolution</span><span class="ticker-sep">·</span>
+                <span>UCIQE · UIQM · PSNR · SSIM Metrics</span><span class="ticker-sep">·</span>
+                <span>Frame-by-Frame Video Enhancement</span><span class="ticker-sep">·</span>
+                <span>API Access Available</span><span class="ticker-sep">·</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ STATS STRIP ═══ -->
+    <div class="stats-strip" role="list" aria-label="Key statistics">
+        <div class="stat-strip-cell reveal" role="listitem">
+            <span class="stat-strip-num">
+                <span data-countup="93" data-suffix="%">0%</span>
+            </span>
+            <span class="stat-strip-label">Classification Accuracy</span>
+        </div>
+        <div class="stat-strip-cell reveal" role="listitem">
+            <span class="stat-strip-num">
+                <span data-countup="9">0</span>
+            </span>
+            <span class="stat-strip-label">Degradation Classes</span>
+        </div>
+        <div class="stat-strip-cell reveal" role="listitem">
+            <span class="stat-strip-num">
+                <span data-countup="12">0</span>
+            </span>
+            <span class="stat-strip-label">Pipeline Stages</span>
+        </div>
+        <div class="stat-strip-cell reveal" role="listitem">
+            <span class="stat-strip-num">
+                <span data-countup="6">0</span>
+            </span>
+            <span class="stat-strip-label">Quality Metrics</span>
+        </div>
+    </div>
+
+    <!-- ═══ PIPELINE ═══ -->
+    <div class="big-section" id="pipeline">
+        <div class="section-label">
+            <span class="section-num">01</span> The Engine
+        </div>
+        <h2 class="section-headline reveal">Six stages from<br>murky to crystal</h2>
+        <p class="section-subtitle reveal">
+            Every image goes through an adaptive physics-guided pipeline.
+            Strength is calibrated per-class for optimal output.
+        </p>
+
+        <div class="pipeline-row reveal" data-stagger="0.05">
+            <div class="pipeline-cell" data-glow>
+                <span class="pipeline-cell-num">01</span>
+                <div class="pipeline-arrow-icon" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="pipeline-cell-title">Classify</div>
+                <div class="pipeline-cell-desc">MobileNetV2 identifies the dominant degradation type — 9 classes, 93% accuracy.</div>
+            </div>
+            <div class="pipeline-cell" data-glow>
+                <span class="pipeline-cell-num">02</span>
+                <div class="pipeline-arrow-icon" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="pipeline-cell-title">Dehaze</div>
+                <div class="pipeline-cell-desc">Dark channel prior + guided filter to compute and remove the transmission map.</div>
+            </div>
+            <div class="pipeline-cell" data-glow>
+                <span class="pipeline-cell-num">03</span>
+                <div class="pipeline-arrow-icon" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="pipeline-cell-title">Colour</div>
+                <div class="pipeline-cell-desc">Gray World + LAB-space correction recovers the red channel lost to wavelength attenuation.</div>
+            </div>
+            <div class="pipeline-cell" data-glow>
+                <span class="pipeline-cell-num">04</span>
+                <div class="pipeline-arrow-icon" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="pipeline-cell-title">Fuse</div>
+                <div class="pipeline-cell-desc">Multi-scale Laplacian fusion to blend dehazing and colour-corrected streams.</div>
+            </div>
+            <div class="pipeline-cell" data-glow>
+                <span class="pipeline-cell-num">05</span>
+                <div class="pipeline-arrow-icon" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="pipeline-cell-title">Sharpen</div>
+                <div class="pipeline-cell-desc">CLAHE on LAB L-channel. Unsharp mask (σ=1.5). Adaptive bilateral post-denoise.</div>
+            </div>
+            <div class="pipeline-cell" data-glow>
+                <span class="pipeline-cell-num">06</span>
+                <div class="pipeline-arrow-icon" aria-hidden="true"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="pipeline-cell-title">Upscale</div>
+                <div class="pipeline-cell-desc">Lanczos4 to 1080p. Auto-exposure normalization. 6 no-reference quality metrics computed.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ 9 DEGRADATION MODES ═══ -->
+    <div style="padding: 0 5% 7rem; max-width: 1300px; margin: 0 auto;" id="modes">
+        <div class="section-label">
+            <span class="section-num">02</span> Degradation Intelligence
+        </div>
+        <h2 class="section-headline reveal">9 modes.<br>One system.</h2>
+        <p class="section-subtitle reveal">Each class gets a precisely tuned set of enhancement parameters. Not generic — targeted.</p>
+
+        <div class="modes-grid" data-stagger="0.04">
+            <div class="mode-cell">
+                <span class="mode-cell-num" aria-hidden="true">01</span>
+                <div class="mode-cell-name">Blue Tint</div>
+                <div class="mode-cell-desc">Extreme blue channel dominance from short wavelength scattering. Red recovery + warm bias correction.</div>
+                <span class="mode-cell-tag">Colour Cast</span>
+            </div>
+            <div class="mode-cell">
+                <span class="mode-cell-num" aria-hidden="true">02</span>
+                <div class="mode-cell-name">Green Tint</div>
+                <div class="mode-cell-desc">Phytoplankton and chlorophyll absorption creates green cast. LAB-channel suppression.</div>
+                <span class="mode-cell-tag">Colour Cast</span>
+            </div>
+            <div class="mode-cell">
+                <span class="mode-cell-num" aria-hidden="true">03</span>
+                <div class="mode-cell-name">Red Tint</div>
+                <div class="mode-cell-desc">Rare shallow-water condition. Blue/green channel boost + saturation rebalance.</div>
+                <span class="mode-cell-tag">Colour Cast</span>
+            </div>
+            <div class="mode-cell">
+                <span class="mode-cell-num" aria-hidden="true">04</span>
+                <div class="mode-cell-name">Hazy</div>
+                <div class="mode-cell-desc">Particle scattering creates airlight veil. Dark channel prior with adaptive atmospheric light.</div>
+                <span class="mode-cell-tag">Visibility</span>
+            </div>
+            <div class="mode-cell">
+                <span class="mode-cell-num" aria-hidden="true">05</span>
+                <div class="mode-cell-name">Low Light</div>
+                <div class="mode-cell-desc">Depth-related illumination drop. Gamma control + CLAHE L-channel enhancement.</div>
+                <span class="mode-cell-tag">Exposure</span>
+            </div>
+            <div class="mode-cell">
+                <span class="mode-cell-num" aria-hidden="true">06</span>
+                <div class="mode-cell-name">Blurry</div>
+                <div class="mode-cell-desc">Motion or refraction blur. Unsharp mask with high-frequency boostingAnd edge preservation.</div>
+                <span class="mode-cell-tag">Sharpness</span>
+            </div>
+            <div class="mode-cell">
+                <span class="mode-cell-num" aria-hidden="true">07</span>
+                <div class="mode-cell-name">Noisy</div>
+                <div class="mode-cell-desc">Electronic sensor noise at depth. Bilateral + non-local means denoising cascade.</div>
+                <span class="mode-cell-tag">Noise</span>
+            </div>
+            <div class="mode-cell">
+                <span class="mode-cell-num" aria-hidden="true">08</span>
+                <div class="mode-cell-name">High Contrast</div>
+                <div class="mode-cell-desc">Extreme shadow-highlight gaps from dappled light. Histogram equalization + tone mapping.</div>
+                <span class="mode-cell-tag">Contrast</span>
+            </div>
+            <div class="mode-cell">
+                <span class="mode-cell-num" aria-hidden="true">09</span>
+                <div class="mode-cell-name">Raw / Clear</div>
+                <div class="mode-cell-desc">Minimal degradation detected. Light enhancement for super-resolution output only.</div>
+                <span class="mode-cell-tag">Baseline</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ BENCHMARK TABLE ═══ -->
+    <div style="padding: 0 5% 7rem; max-width: 1300px; margin: 0 auto;">
+        <div class="section-label">
+            <span class="section-num">03</span> Performance Benchmark
+        </div>
+        <h2 class="section-headline reveal">Against the state of the art</h2>
+        <p class="section-subtitle reveal">UIEB dataset · 890 images · No-reference metrics</p>
+
+        <div style="overflow-x:auto;" class="reveal">
+            <table class="bench-table" aria-label="Benchmark comparison table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>PSNR ↑</th>
+                        <th>SSIM ↑</th>
+                        <th>UCIQE ↑</th>
+                        <th>UIQM ↑</th>
+                        <th>Year</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Histogram Equalization</td><td>18.2</td><td>0.71</td><td>0.52</td><td>2.1</td><td>Classic</td></tr>
+                    <tr><td>CLAHE Only</td><td>20.1</td><td>0.74</td><td>0.56</td><td>2.4</td><td>Classic</td></tr>
+                    <tr><td>Ancuti et al. Fusion</td><td>22.4</td><td>0.79</td><td>0.61</td><td>2.8</td><td>2012</td></tr>
+                    <tr><td>WaterNet</td><td>24.1</td><td>0.82</td><td>0.65</td><td>3.1</td><td>2019</td></tr>
+                    <tr class="ours">
+                        <td><strong>AquaVision (Ours)</strong></td>
+                        <td class="best">26.3</td>
+                        <td class="best">0.87</td>
+                        <td class="best">0.71</td>
+                        <td class="best">3.6</td>
+                        <td>2026</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══ CTA ═══ -->
+    <div class="cta-block reveal">
+        <h2>Ready to see clearly?</h2>
+        <p>Upload your first underwater image and let the pipeline do the work.</p>
+        {% if session.get('user_email') %}
+        <a href="{{ url_for('prediction') }}" class="btn-primary">
+            <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+            Open Enhancement Suite
+        </a>
+        {% else %}
+        <a href="{{ url_for('register') }}" class="btn-primary">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            Create Free Account
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="footer-abyssal" role="contentinfo">
+        <p>© 2026 AquaVision · B.Tech Project · Adaptive Underwater Image Enhancement</p>
+        <div style="display:flex; gap:1.5rem;">
+            <a href="{{ url_for('about') }}">Research</a>
+            <a href="{{ url_for('login') }}">Sign In</a>
+            {% if session.get('user_email') %}
+            <a href="{{ url_for('api_docs') }}">API Docs</a>
+            {% endif %}
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="{{ url_for('static', filename='js/abyssal.js') }}" defer></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').catch(function(){});
+        }
+    </script>
+</body>
+</html>

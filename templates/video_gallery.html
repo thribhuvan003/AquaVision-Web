@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <title>My Videos — AquaVision</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+    <style>
+        .page-content {
+            position: relative; z-index: 1;
+            max-width: 1000px; margin: 0 auto;
+            padding: 100px 5% 6rem;
+        }
+
+        .ph-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem; font-weight: 700;
+            color: var(--cyan); text-transform: uppercase; letter-spacing: 0.14em;
+            display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem;
+        }
+        .ph-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--cyan); }
+        .ph-title { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; letter-spacing: -0.04em; color: var(--white); margin-bottom: 2rem; line-height: 1; text-shadow: 0 4px 15px rgba(6,214,240,0.15); }
+
+        .toolbar {
+            display: flex; align-items: center; gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        /* Task Cards */
+        .task-list {
+            display: flex; flex-direction: column; gap: 1.5rem;
+        }
+
+        .task-card {
+            background: var(--black-1);
+            border: var(--b1);
+            padding: 2rem 2.5rem;
+            display: flex; flex-direction: column; gap: 1.2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .task-card:hover {
+            border-color: rgba(6,214,240,0.25);
+            background: rgba(6,214,240,0.02);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        .task-card.completed { border-left: 4px solid var(--green); }
+        .task-card.error { border-left: 4px solid var(--red); }
+        .task-card.processing::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            animation: pulse-line 2s infinite linear;
+        }
+        @keyframes pulse-line { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        .tc-header {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .tc-title {
+            font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--white);
+            display: flex; align-items: center; gap: 0.8rem;
+        }
+        .tc-title i { color: var(--cyan); opacity: 0.7; }
+        
+        .tc-status {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.05em;
+            padding: 0.3rem 0.8rem; background: rgba(255,255,255,0.05); color: var(--gray-1);
+        }
+        .task-card.processing .tc-status { color: var(--cyan); background: rgba(6,214,240,0.08); border: 1px solid rgba(6,214,240,0.2); }
+        .task-card.completed .tc-status { color: var(--green); background: rgba(58,255,145,0.08); border: 1px solid rgba(58,255,145,0.2); }
+        .task-card.error .tc-status { color: var(--red); background: rgba(255,58,92,0.08); border: 1px solid rgba(255,58,92,0.2); }
+
+        .tc-meta {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--gray-2);
+            display: flex; gap: 1.5rem;
+        }
+
+        .tc-progress { margin-top: 0.5rem; }
+        .tc-bar-bg { width: 100%; height: 4px; background: var(--black-3); border-radius: 2px; overflow: hidden; }
+        .tc-bar-fill { height: 100%; background: var(--cyan); width: 0%; transition: width 0.3s ease; }
+        .task-card.completed .tc-bar-fill { background: var(--green); }
+        
+        .tc-actions { margin-top: 1rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+
+        .btn-delete {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.45rem 1rem;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 700;
+            color: var(--red, #ff3a5c); background: rgba(255,58,92,0.06);
+            border: 1px solid rgba(255,58,92,0.25);
+            cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .btn-delete:hover {
+            background: rgba(255,58,92,0.14); border-color: rgba(255,58,92,0.55);
+            box-shadow: 0 0 14px rgba(255,58,92,0.18);
+        }
+        .btn-delete:disabled {
+            opacity: 0.4; cursor: not-allowed;
+        }
+        .task-card.deleting { opacity: 0; transform: translateX(20px); transition: opacity 0.35s ease, transform 0.35s ease; }
+
+        /* Empty */
+        .empty-state {
+            text-align: center; padding: 6rem 2rem; border: var(--b1); background: var(--black-1);
+        }
+        .empty-state h3 { font-family: 'Syne', sans-serif; font-size: 1.5rem; color: var(--white); margin-bottom: 0.5rem; }
+        .empty-state p { color: var(--gray-2); margin-bottom: 2rem; }
+    </style>
+</head>
+<body>
+    <nav class="nav-abyssal" role="navigation">
+        <a href="{{ url_for('home') }}" class="nav-logo">AquaVision <span class="nav-logo-dot"></span></a>
+        <ul class="nav-links-abyssal">
+            <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('prediction') }}">Enhance Image</a></li>
+            <li><a href="{{ url_for('video_prediction') }}">Enhance Video</a></li>
+            <li><a href="{{ url_for('gallery') }}">Image Gallery</a></li>
+            <li><a href="{{ url_for('my_videos') }}" class="active">My Videos</a></li>
+            <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
+        </ul>
+    </nav>
+
+    <main class="page-content">
+        <div class="ph-eyebrow">Background Processing</div>
+        <h1 class="ph-title">My Videos</h1>
+
+        <div class="toolbar">
+            <a href="{{ url_for('video_prediction') }}" class="btn-primary">
+                <i class="fas fa-video"></i> Enhance New Video
+            </a>
+        </div>
+
+        {% if tasks %}
+        <div class="task-list">
+            {% for t in tasks %}
+            <div class="task-card {% if 'Completed' in t.status %}completed{% elif 'Error' in t.status %}error{% else %}processing{% endif %}" data-id="{{ t.id }}" data-status="{{ t.status }}">
+                <div class="tc-header">
+                    <div class="tc-title">
+                        <i class="fas fa-film"></i> {{ t.original_filename }}
+                    </div>
+                    <div class="tc-status" id="status-text-{{ t.id }}">{{ t.status }}</div>
+                </div>
+                
+                <div class="tc-meta">
+                    <span>ID: {{ t.id }}</span>
+                    <span>Started: {{ t.timestamp[:16] }}</span>
+                </div>
+
+                {% if 'Completed' not in t.status and 'Error' not in t.status %}
+                <div class="tc-progress" id="progress-container-{{ t.id }}">
+                    <div class="tc-bar-bg"><div class="tc-bar-fill" id="progress-bar-{{ t.id }}" style="width: {{ t.progress }}%"></div></div>
+                </div>
+                {% endif %}
+
+                <div class="tc-actions" id="actions-{{ t.id }}">
+                    {% if 'Completed' in t.status and t.result_path %}
+                    <a href="/download_video/{{ t.result_path }}" class="btn-outline" download>
+                        <i class="fas fa-download"></i> Download Enhanced Video
+                    </a>
+                    {% endif %}
+                    <button class="btn-delete"
+                            id="del-btn-{{ t.id }}"
+                            onclick="deleteTask('{{ t.id }}', this)">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>No Videos Processing</h3>
+            <p>Upload a video to see background tasks here.</p>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="footer-abyssal">
+        <p>© 2026 AquaVision</p>
+    </footer>
+
+    <script>
+        // ── Delete a video task (async, no full-page reload) ──────────────
+        async function deleteTask(taskId, btn) {
+            if (!confirm('Permanently delete this video task and its files?')) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Deleting…';
+
+            try {
+                const resp = await fetch('/my_videos/delete/' + taskId, { method: 'POST' });
+                const data = await resp.json();
+
+                if (data.success) {
+                    const card = document.querySelector('.task-card[data-id="' + taskId + '"]');
+                    if (card) {
+                        card.classList.add('deleting');
+                        setTimeout(() => {
+                            card.remove();
+                            // Show empty-state if no cards remain
+                            if (document.querySelectorAll('.task-card').length === 0) {
+                                const list = document.querySelector('.task-list');
+                                if (list) {
+                                    list.outerHTML = '<div class="empty-state"><h3>No Videos Processing</h3><p>Upload a video to see background tasks here.</p></div>';
+                                }
+                            }
+                        }, 380);
+                    }
+                } else {
+                    alert('Delete failed: ' + (data.error || 'Unknown error'));
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete';
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete';
+            }
+        }
+
+        // ── Real-time polling ──────────────────────────────────────────────
+        function updateTasks() {
+            const cards = document.querySelectorAll('.task-card.processing');
+            if (cards.length === 0) return;
+
+            cards.forEach(card => {
+                const id = card.getAttribute('data-id');
+                fetch('/api/task_status/' + id)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.error) return;
+                        
+                        // Map new API status tokens back to display text
+                        let displayStatus = data.status;
+                        if (data.status === 'COMPLETED') displayStatus = 'Completed';
+                        else if (data.status === 'FAILED') displayStatus = 'Error: ' + ((data.result && data.result.error) || 'Unknown');
+                        else if (data.status === 'PROCESSING' && data.result && data.result.prediction) displayStatus = 'Enhancing: ' + data.result.prediction;
+                        else if (data.status === 'PENDING') displayStatus = 'Processing';
+
+                        document.getElementById('status-text-' + id).innerText = displayStatus;
+                        const bar = document.getElementById('progress-bar-' + id);
+                        const progress = (data.result && data.result.confidence) || 0;
+                        if(bar) bar.style.width = Math.min(progress, 100) + '%';
+                        
+                        if (data.status === 'COMPLETED' || data.status === 'FAILED') {
+                            card.classList.remove('processing');
+                            if (data.status === 'COMPLETED') {
+                                card.classList.add('completed');
+                                const actions = document.getElementById('actions-' + id);
+                                // Re-inject both download link AND delete button so deletion still works after polling
+                                const dlLink = data.enhanced_name
+                                    ? `<a href="/download_video/${data.enhanced_name}" class="btn-outline" download><i class="fas fa-download"></i> Download Enhanced Video</a>`
+                                    : '';
+                                actions.innerHTML = dlLink +
+                                    `<button class="btn-delete" id="del-btn-${id}" onclick="deleteTask('${id}', this)"><i class="fas fa-trash-alt"></i> Delete</button>`;
+                                const prog = document.getElementById('progress-container-' + id);
+                                if (prog) prog.style.display = 'none';
+                            } else {
+                                card.classList.add('error');
+                            }
+                        }
+                    })
+                    .catch(e => console.error(e));
+            });
+        }
+
+        setInterval(updateTasks, 3000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <title>AI Reports — AquaVision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+    <style>
+        .page-content {
+            position: relative; z-index: 1;
+            max-width: 1000px; margin: 0 auto;
+            padding: 100px 5% 6rem;
+        }
+
+        .ph-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem; font-weight: 700;
+            color: var(--cyan); text-transform: uppercase; letter-spacing: 0.14em;
+            display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem;
+        }
+        .ph-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--cyan); }
+        .ph-title { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: -0.04em; color: var(--white); margin-bottom: 0.4rem; line-height: 1; }
+        .ph-sub { font-size: 0.88rem; color: var(--gray-1); margin-bottom: 2.5rem; }
+
+        /* ── Model selector ── */
+        .model-selector {
+            display: flex; gap: 1px;
+            background: rgba(255,255,255,0.05);
+            border: var(--b1);
+            margin-bottom: 2.5rem;
+            width: fit-content;
+        }
+        .model-selector form { display: contents; }
+        .model-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--black);
+            border: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem; font-weight: 700;
+            color: var(--gray-1);
+            text-transform: uppercase; letter-spacing: 0.09em;
+            cursor: pointer;
+            display: flex; align-items: center; gap: 0.5rem;
+            transition: background 0.2s, color 0.2s;
+        }
+        .model-btn:hover { background: var(--black-2); color: var(--off-white); }
+        .model-btn.active-model { background: rgba(6,214,240,0.08); color: var(--cyan); }
+
+        /* ── Stats HUD ── */
+        .stats-hud {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: rgba(255,255,255,0.05);
+            border: var(--b1);
+            margin-bottom: 2rem;
+        }
+
+        .hud-cell {
+            background: var(--black);
+            padding: 1.8rem 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .hud-cell::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0; height: 2px;
+            background: var(--cyan); opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .hud-cell:hover::after { opacity: 1; }
+
+        .hud-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.4rem; font-weight: 800;
+            color: var(--white); letter-spacing: -0.04em;
+            display: block; margin-bottom: 0.2rem; line-height: 1;
+        }
+
+        .hud-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.58rem; font-weight: 700;
+            color: var(--gray-1); text-transform: uppercase; letter-spacing: 0.1em;
+        }
+
+        /* ── Report table ── */
+        .report-panel {
+            border: var(--b1);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .report-panel-hdr {
+            padding: 1rem 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem; font-weight: 700;
+            color: var(--gray-1); text-transform: uppercase; letter-spacing: 0.1em;
+            border-bottom: var(--b1);
+            background: var(--black-1);
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            padding: 0.75rem 1.2rem;
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem; font-weight: 700;
+            color: var(--gray-2); text-transform: uppercase; letter-spacing: 0.1em;
+            border-bottom: var(--b1);
+            background: var(--black-1);
+        }
+        td {
+            padding: 0.75rem 1.2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--off-white);
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(6,214,240,0.02); }
+        .best { color: var(--cyan) !important; font-weight: 700; }
+        .avg-row td { font-weight: 700; border-top: var(--b1); background: rgba(255,255,255,0.01); }
+
+        /* ── Note ── */
+        .note-panel {
+            padding: 1.2rem 1.5rem;
+            background: var(--black-1);
+            border: var(--b1);
+            font-size: 0.85rem;
+            color: var(--gray-1);
+            line-height: 1.65;
+            display: flex; align-items: flex-start; gap: 0.8rem;
+        }
+        .note-panel i { color: var(--cyan); flex-shrink: 0; margin-top: 0.1rem; }
+        .note-panel strong { color: var(--off-white); }
+
+        @media (max-width: 700px) {
+            .stats-hud { grid-template-columns: repeat(2, 1fr); }
+            .model-selector { width: 100%; flex-wrap: wrap; }
+            table { font-size: 0.7rem; }
+            th, td { padding: 0.55rem 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+
+    <nav class="nav-abyssal" role="navigation" aria-label="Main navigation">
+        <a href="{{ url_for('home') }}" class="nav-logo">
+            AquaVision <span class="nav-logo-dot" aria-hidden="true"></span>
+        </a>
+        <ul class="nav-links-abyssal" role="list">
+            <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('prediction') }}">Enhance</a></li>
+            <li><a href="{{ url_for('video_prediction') }}">Video</a></li>
+            <li><a href="{{ url_for('batch_page') }}">Batch</a></li>
+            <li><a href="{{ url_for('my_videos') }}">My Videos</a></li>
+            <li><a href="{{ url_for('gallery') }}">Gallery</a></li>
+            <li><a href="{{ url_for('model') }}" class="active">Reports</a></li>
+            <li><a href="{{ url_for('about') }}">Research</a></li>
+            <li><a href="{{ url_for('api_docs') }}">API</a></li>
+            <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
+        </ul>
+    </nav>
+
+    <main class="page-content" id="main-content">
+        <div class="ph-eyebrow">AI Classification · Performance Reports</div>
+        <h1 class="ph-title">Model Reports</h1>
+        <p class="ph-sub">Per-class classification performance across three trained architectures</p>
+
+        <!-- Model selector -->
+        <div class="model-selector" role="tablist" aria-label="Model selection">
+            {% for m in models_available %}
+            <form method="POST">
+                <input type="hidden" name="selected_model" value="{{ m }}">
+                <button type="submit"
+                        role="tab"
+                        aria-selected="{{ 'true' if m == selected_model else 'false' }}"
+                        class="model-btn {% if m == selected_model %}active-model{% endif %}">
+                    {% if m == 'mobilenet' %}<i class="fas fa-mobile-screen-button" aria-hidden="true"></i> MobileNetV2
+                    {% elif m == 'cnn' %}<i class="fas fa-brain" aria-hidden="true"></i> Custom CNN
+                    {% elif m == 'resnet' %}<i class="fas fa-network-wired" aria-hidden="true"></i> ResNet
+                    {% else %}{{ m | title }}{% endif %}
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+
+        {% if report %}
+        <!-- Stats HUD -->
+        <div class="stats-hud" role="list" aria-label="Performance statistics">
+            <div class="hud-cell reveal" role="listitem">
+                <span class="hud-value">{{ report.accuracy }}</span>
+                <span class="hud-label">Accuracy</span>
+            </div>
+            <div class="hud-cell reveal" role="listitem">
+                <span class="hud-value">{{ report.macro_precision }}</span>
+                <span class="hud-label">Precision</span>
+            </div>
+            <div class="hud-cell reveal" role="listitem">
+                <span class="hud-value">{{ report.macro_recall }}</span>
+                <span class="hud-label">Recall</span>
+            </div>
+            <div class="hud-cell reveal" role="listitem">
+                <span class="hud-value">{{ report.macro_f1 }}</span>
+                <span class="hud-label">F1 Score</span>
+            </div>
+        </div>
+
+        <!-- Per-class table -->
+        <div class="report-panel reveal">
+            <div class="report-panel-hdr" aria-label="Per-class performance table header">
+                <i class="fas fa-table" aria-hidden="true"></i> Per-Class Performance
+            </div>
+            <div style="overflow-x:auto;">
+                <table aria-label="Per-class performance data">
+                    <thead>
+                        <tr>
+                            <th scope="col">Class</th>
+                            <th scope="col">Precision</th>
+                            <th scope="col">Recall</th>
+                            <th scope="col">F1-Score</th>
+                            <th scope="col">Support</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report.per_class %}
+                        <tr{% if row.class_name in ['macro avg', 'weighted avg'] %} class="avg-row"{% endif %}>
+                            <td>{{ row.class_name | replace('_', ' ') | title }}</td>
+                            <td{% if row.precision == report.best_precision %} class="best"{% endif %}>{{ row.precision }}</td>
+                            <td{% if row.recall == report.best_recall %} class="best"{% endif %}>{{ row.recall }}</td>
+                            <td{% if row.f1 == report.best_f1 %} class="best"{% endif %}>{{ row.f1 }}</td>
+                            <td>{{ row.support }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Explanatory note -->
+        <div class="note-panel reveal">
+            <i class="fas fa-info-circle" aria-hidden="true"></i>
+            <div>
+                <strong>MobileNetV2</strong> is used in production for its optimal balance of
+                accuracy (93%) and inference speed. The model classifies underwater images into
+                9 degradation types, enabling targeted enhancement via the adaptive pipeline —
+                images receive a 12-stage physics-guided restoration, video receives frame-by-frame
+                adaptive OpenCV processing.
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer-abyssal" role="contentinfo">
+        <p>© 2026 AquaVision · MobileNetV2 · Custom CNN · ResNet-50</p>
+        <a href="{{ url_for('about') }}">Research Overview →</a>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="{{ url_for('static', filename='js/abyssal.js') }}" defer></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').catch(function(){});
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <title>Gallery — AquaVision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+    <style>
+        .page-content {
+            position: relative; z-index: 1;
+            max-width: 1200px; margin: 0 auto;
+            padding: 100px 5% 6rem;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .ph-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem; font-weight: 700;
+            color: var(--cyan); text-transform: uppercase; letter-spacing: 0.14em;
+            display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.6rem;
+        }
+        .ph-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--cyan); }
+
+        .ph-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            font-weight: 800; letter-spacing: -0.04em;
+            color: var(--white); line-height: 1;
+        }
+
+        /* Gallery grid — sharp, brutalist */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1px;
+            background: rgba(255,255,255,0.05);
+            border: var(--b1);
+        }
+
+        .gallery-item {
+            background: var(--black);
+            overflow: hidden;
+            position: relative;
+            transition: background 0.2s;
+        }
+        .gallery-item:hover { background: var(--black-1); }
+
+        /* Before / after pair */
+        .gallery-pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gallery-pair img {
+            width: 100%; height: 180px;
+            object-fit: cover; display: block;
+        }
+
+        /* Divider line */
+        .pair-divider {
+            position: absolute;
+            left: 50%; top: 0; bottom: 0;
+            width: 1px;
+            background: var(--cyan);
+            z-index: 2;
+        }
+
+        .pair-label {
+            position: absolute;
+            bottom: 8px;
+            padding: 0.15rem 0.55rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.58rem; font-weight: 700;
+            background: rgba(5,5,5,0.88);
+            text-transform: uppercase; letter-spacing: 0.08em;
+            z-index: 3;
+        }
+        .pair-label.left  { left: 8px; color: var(--gray-1); }
+        .pair-label.right { right: 8px; color: var(--cyan); }
+
+        /* Action bar */
+        .gallery-actions {
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: var(--b0);
+        }
+
+        .gallery-filename {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem; color: var(--gray-2);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 55%;
+        }
+
+        .gallery-btns { display: flex; gap: 0.5rem; align-items: center; }
+
+        .gal-dl-btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem; font-weight: 700;
+            color: var(--cyan); text-decoration: none;
+            display: flex; align-items: center; gap: 0.3rem;
+            padding: 0.3rem 0.7rem;
+            border: 1px solid rgba(6,214,240,0.2);
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .gal-dl-btn:hover {
+            background: rgba(6,214,240,0.07);
+            border-color: var(--cyan);
+        }
+
+        .gal-del-btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem; font-weight: 700;
+            color: var(--red);
+            background: none; border: 1px solid rgba(255,58,92,0.2);
+            cursor: pointer;
+            display: flex; align-items: center; gap: 0.3rem;
+            padding: 0.3rem 0.7rem;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .gal-del-btn:hover {
+            background: rgba(255,58,92,0.06);
+            border-color: var(--red);
+        }
+
+        /* Toolbar */
+        .gallery-toolbar {
+            display: flex; align-items: center; gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 8rem 2rem;
+            border: var(--b1);
+        }
+
+        .empty-icon {
+            font-size: 3.5rem;
+            color: var(--gray-3);
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .empty-state h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.4rem; font-weight: 800;
+            color: var(--gray-1); margin-bottom: 0.6rem;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem; color: var(--gray-2);
+            margin-bottom: 2rem; max-width: 320px; margin-inline: auto;
+        }
+
+        @media (max-width: 700px) {
+            .gallery-grid { grid-template-columns: 1fr; }
+            .page-header { flex-direction: column; align-items: flex-start; }
+        }
+    
+        /* Lightbox CSS */
+        #lightbox {
+            display: none;
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.92);
+            padding: 2rem;
+            align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        #lightbox.visible {
+            display: flex; opacity: 1;
+        }
+        #lightbox-img {
+            max-width: 90vw; max-height: 90vh;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        #lightbox-close {
+            position: absolute; top: 1.5rem; right: 2rem;
+            color: #fff; font-size: 2rem; cursor: pointer;
+            opacity: 0.6; transition: opacity 0.2s;
+        }
+        #lightbox-close:hover { opacity: 1; }
+        
+        .gallery-pair img { cursor: zoom-in; }
+
+    </style>
+</head>
+<body>
+
+
+    <nav class="nav-abyssal" role="navigation" aria-label="Main navigation">
+        <a href="{{ url_for('home') }}" class="nav-logo">
+            AquaVision <span class="nav-logo-dot" aria-hidden="true"></span>
+        </a>
+        <ul class="nav-links-abyssal" role="list">
+            <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('prediction') }}">Enhance</a></li>
+            <li><a href="{{ url_for('video_prediction') }}">Video</a></li>
+            <li><a href="{{ url_for('batch_page') }}">Batch</a></li>
+            <li><a href="{{ url_for('my_videos') }}">My Videos</a></li>
+            <li><a href="{{ url_for('gallery') }}" class="active">Gallery</a></li>
+            <li><a href="{{ url_for('model') }}">Reports</a></li>
+            <li><a href="{{ url_for('about') }}">Research</a></li>
+            <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
+        </ul>
+    </nav>
+
+    <main class="page-content" id="main-content">
+        <div class="page-header">
+            <div>
+                <div class="ph-eyebrow">History · Enhancement Gallery</div>
+                <h1 class="ph-title">Past Enhancements</h1>
+            </div>
+            {% if pairs %}
+            <div class="gallery-toolbar">
+                <a href="{{ url_for('gallery_download_zip') }}" class="btn-outline">
+                    <i class="fas fa-file-zipper" aria-hidden="true"></i> Download All as ZIP
+                </a>
+                <a href="{{ url_for('prediction') }}" class="btn-primary">
+                    <i class="fas fa-plus" aria-hidden="true"></i> New Enhancement
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if pairs %}
+        {% if tags and tags|length > 1 %}
+        <style>
+            .gallery-filters {
+                display: flex;
+                gap: 0.75rem;
+                flex-wrap: wrap;
+                margin: 2rem 0 1rem 0;
+            }
+            .filter-btn {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: var(--text-muted);
+                padding: 0.5rem 1.2rem;
+                border-radius: 100px;
+                cursor: pointer;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                font-family: inherit;
+                font-size: 0.95rem;
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .filter-btn:hover {
+                background: rgba(255, 255, 255, 0.15);
+                color: var(--text-primary);
+                transform: translateY(-2px);
+            }
+            .filter-btn.active {
+                background: var(--primary-color);
+                color: var(--bg-color);
+                border-color: rgba(255,255,255,0.4);
+                box-shadow: 0 4px 15px rgba(255,255,255,0.2);
+                font-weight: 500;
+            }
+        </style>
+        <div class="gallery-filters">
+            <button class="filter-btn active" data-filter="all">All</button>
+            {% for tag in tags %}
+            <button class="filter-btn" data-filter="{{ tag }}">{{ tag }}</button>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="gallery-grid" data-stagger="0.04">
+            {% for pair in pairs %}
+            <div class="gallery-item" data-tag="{{ pair.tag }}">
+                <div class="gallery-pair" aria-label="Before and after comparison">
+                    <img src="{{ url_for('static', filename='uploads/' + pair.original) }}" alt="Original image" loading="lazy">
+                    <img src="{{ url_for('static', filename='enhanced/' + pair.enhanced) }}" alt="Enhanced image" loading="lazy">
+                    <div class="pair-divider" aria-hidden="true"></div>
+                    <span class="pair-label left" aria-hidden="true">Before</span>
+                    <span class="pair-label right" aria-hidden="true">After</span>
+                </div>
+                <div class="gallery-actions">
+                    <span class="gallery-filename" title="{{ pair.original }}">{{ pair.original }}</span>
+                    <div class="gallery-btns">
+                        <a href="{{ url_for('static', filename='enhanced/' + pair.enhanced) }}"
+                           download class="btn-outline" style="padding: 0.3rem 0.7rem; font-size:0.75rem;" aria-label="Download enhanced">
+                            <i class="fas fa-download" aria-hidden="true"></i> DL
+                        </a>
+                        <button class="btn-outline" style="padding: 0.3rem 0.7rem; font-size:0.75rem; border-color:var(--red); color:var(--red);"
+                                onclick="deleteItem(this, '{{ pair.enhanced }}')"
+                                aria-label="Delete this enhancement">
+                            <i class="fas fa-trash-can" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <span class="empty-icon" aria-hidden="true"><i class="fas fa-images"></i></span>
+            <h3>Nothing here yet</h3>
+            <p>Upload and enhance your first underwater image to see it here.</p>
+            <a href="{{ url_for('prediction') }}" class="btn-primary">
+                <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                Enhance an Image
+            </a>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="footer-abyssal" role="contentinfo">
+        <p>© 2026 AquaVision · Enhancement History</p>
+        <a href="{{ url_for('prediction') }}">New Enhancement →</a>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="{{ url_for('static', filename='js/abyssal.js') }}" defer></script>
+    <script>
+        function deleteItem(btn, filename) {
+            if (!confirm('Delete this enhancement pair?')) return;
+            var card = btn.closest('.gallery-item');
+            if (!card) { alert('Error: could not find gallery card'); return; }
+            btn.disabled = true;
+            btn.style.opacity = '0.4';
+            fetch('/gallery/delete/' + encodeURIComponent(filename), {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            })
+            .then(function(r) {
+                if (!r.ok) throw new Error('Server returned ' + r.status);
+                return r.json();
+            })
+            .then(function(data) {
+                if (data.success) {
+                    card.style.transition = 'opacity 0.3s ease';
+                    card.style.opacity = '0';
+                    setTimeout(function() {
+                        card.remove();
+                        var remaining = document.querySelectorAll('.gallery-item');
+                        if (remaining.length === 0) {
+                            var grid = document.querySelector('.gallery-grid');
+                            var toolbar = document.querySelector('.gallery-toolbar');
+                            if (grid) grid.remove();
+                            if (toolbar) toolbar.remove();
+                            var mc = document.getElementById('main-content');
+                            if (mc) {
+                                mc.innerHTML += '<div class="empty-state"><span class="empty-icon"><i class="fas fa-images"></i></span><h3>Nothing here yet</h3><p>Upload and enhance your first underwater image.</p><a href="/prediction" class="btn-primary"><i class="fas fa-wand-magic-sparkles"></i> Enhance an Image</a></div>';
+                            }
+                        }
+                    }, 320);
+                } else {
+                    btn.disabled = false;
+                    btn.style.opacity = '';
+                    alert('Could not delete: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(function(err) {
+                btn.disabled = false;
+                btn.style.opacity = '';
+                alert('Delete failed: ' + err.message);
+            });
+        }
+
+        // Semantic Filter Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const items = document.querySelectorAll('.gallery-item');
+
+            if(filterBtns.length === 0) return;
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Update active state
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    const filterValue = btn.getAttribute('data-filter');
+
+                    items.forEach(item => {
+                        item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        if (filterValue === 'all' || item.getAttribute('data-tag') === filterValue) {
+                            item.style.display = ''; // revert to original display
+                            setTimeout(() => {
+                                item.style.opacity = '1';
+                                item.style.transform = 'scale(1)';
+                            }, 50);
+                        } else {
+                            item.style.opacity = '0';
+                            item.style.transform = 'scale(0.95)';
+                            setTimeout(() => item.style.display = 'none', 300);
+                        }
+                    });
+                });
+            });
+        });
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').catch(function(){});
+        }
+    </script>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox" onclick="closeLightbox()">
+        <span id="lightbox-close">&times;</span>
+        <img id="lightbox-img" src="" alt="Enlarged view">
+    </div>
+
+    <script>
+        function openLightbox(src) {
+            const lb = document.getElementById('lightbox');
+            const lbi = document.getElementById('lightbox-img');
+            lbi.src = src;
+            lb.classList.add('visible');
+        }
+        function closeLightbox() {
+            const lb = document.getElementById('lightbox');
+            lb.classList.remove('visible');
+        }
+        
+        // Attach click listeners to all gallery images
+        document.addEventListener('DOMContentLoaded', () => {
+            const imgs = document.querySelectorAll('.gallery-pair img');
+            imgs.forEach(img => {
+                img.addEventListener('click', () => {
+                    openLightbox(img.src);
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <meta name="description" content="About AquaVision — Adaptive quality-aware underwater image enhancement research.">
+    <link rel="manifest" href="/static/manifest.json">
+    <title>Research — AquaVision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+    <style>
+        .page-content {
+            position: relative; z-index: 1;
+            max-width: 900px; margin: 0 auto;
+            padding: 100px 5% 6rem;
+        }
+
+        /* Page header */
+        .ph-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem; font-weight: 700;
+            color: var(--cyan); text-transform: uppercase; letter-spacing: 0.14em;
+            display: flex; align-items: center; gap: 0.8rem;
+            margin-bottom: 1.2rem;
+        }
+        .ph-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--cyan); }
+
+        .ph-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.2rem, 5vw, 4rem);
+            font-weight: 800; letter-spacing: -0.04em; line-height: 1;
+            color: var(--white); margin-bottom: 1rem;
+        }
+
+        .ph-subtitle {
+            font-size: 1rem; color: var(--gray-1); line-height: 1.65;
+            max-width: 600px; margin-bottom: 4rem;
+        }
+
+        /* ── Big metric badge ── */
+        .acc-badge {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 2rem;
+            align-items: center;
+            padding: 2rem 2.5rem;
+            background: var(--black-1);
+            border: var(--b2);
+            margin-bottom: 3rem;
+        }
+
+        .acc-badge-num {
+            font-family: 'Syne', sans-serif;
+            font-size: 5rem; font-weight: 800;
+            color: var(--white); letter-spacing: -0.06em; line-height: 1;
+        }
+
+        .acc-badge-num span { color: var(--cyan); }
+
+        .acc-badge-info { border-left: 1px solid var(--black-3); padding-left: 2rem; }
+        .acc-badge-info strong {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem; font-weight: 700; color: var(--white); display: block; margin-bottom: 0.3rem;
+        }
+        .acc-badge-info p { font-size: 0.88rem; color: var(--gray-1); line-height: 1.6; }
+
+        /* ── Section headers ── */
+        .section-sep {
+            display: flex; align-items: center; gap: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem; font-weight: 700; color: var(--gray-2);
+            text-transform: uppercase; letter-spacing: 0.12em;
+            margin: 3.5rem 0 2rem;
+        }
+        .section-sep::after { content: ''; flex: 1; height: 1px; background: var(--black-3); }
+
+        /* ── Body text ── */
+        .body-text { font-size: 0.95rem; color: var(--gray-1); line-height: 1.8; margin-bottom: 1.5rem; }
+        .body-text strong { color: var(--off-white); font-weight: 600; }
+
+        /* ── Pipeline horizontal ── */
+        .pipeline-h {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            border: var(--b1);
+            overflow-x: auto;
+            margin-bottom: 3rem;
+        }
+
+        .pipe-node {
+            flex-shrink: 0;
+            padding: 1.5rem 1.8rem;
+            border-right: var(--b1);
+            text-align: center;
+        }
+        .pipe-node:last-child { border-right: none; }
+
+        .pipe-node-icon {
+            width: 40px; height: 40px;
+            border: var(--b1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: var(--cyan);
+            margin: 0 auto 0.6rem;
+        }
+
+        .pipe-node-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--gray-1);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            max-width: 80px;
+            line-height: 1.4;
+        }
+
+        /* ── Class chips — sharp ── */
+        .class-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+            border: var(--b1);
+            margin-bottom: 3rem;
+        }
+
+        .class-chip {
+            padding: 0.8rem 1.4rem;
+            border-right: var(--b1);
+            border-bottom: var(--b1);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--gray-1);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .class-chip:hover {
+            background: rgba(6,214,240,0.05);
+            color: var(--cyan);
+        }
+
+        /* ── Info grid ── */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: rgba(255,255,255,0.05);
+            border: var(--b1);
+            margin-bottom: 3rem;
+        }
+
+        .info-cell {
+            background: var(--black);
+            padding: 1.8rem;
+        }
+
+        .info-cell h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem; font-weight: 800;
+            color: var(--white); margin-bottom: 0.7rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .info-cell h3 i { color: var(--cyan); }
+
+        .info-cell p {
+            font-size: 0.83rem; color: var(--gray-1); line-height: 1.7;
+        }
+        .info-cell p strong { color: var(--off-white); }
+
+        /* Metrics list */
+        .metrics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            border: var(--b1);
+            margin-bottom: 3rem;
+        }
+
+        .metric-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: var(--black);
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            gap: 1rem;
+        }
+        .metric-item:last-child { border-bottom: none; }
+
+        .metric-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--off-white);
+            font-weight: 700;
+        }
+        .metric-desc { font-size: 0.8rem; color: var(--gray-2); }
+
+        @media (max-width: 640px) {
+            .info-grid { grid-template-columns: 1fr; }
+            .acc-badge { grid-template-columns: 1fr; text-align: center; }
+            .acc-badge-info { border-left: none; border-top: var(--b1); padding-left: 0; padding-top: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+
+    <nav class="nav-abyssal" role="navigation" aria-label="Main navigation">
+        <a href="{{ url_for('index') }}" class="nav-logo">
+            AquaVision <span class="nav-logo-dot" aria-hidden="true"></span>
+        </a>
+        <ul class="nav-links-abyssal" role="list">
+            {% if session.get('user_email') %}
+            <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('prediction') }}">Enhance</a></li>
+            <li><a href="{{ url_for('my_videos') }}">My Videos</a></li>
+            <li><a href="{{ url_for('gallery') }}">Gallery</a></li>
+            <li><a href="{{ url_for('model') }}">Reports</a></li>
+            {% else %}
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            {% endif %}
+            <li><a href="{{ url_for('about') }}" class="active">Research</a></li>
+            {% if session.get('user_email') %}
+            <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
+            {% else %}
+            <li><a href="{{ url_for('login') }}" class="nav-cta">Sign In →</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <main class="page-content" id="main-content">
+        <div class="ph-eyebrow">Research · B.Tech Project · UIEB Dataset</div>
+        <h1 class="ph-title reveal">The Science Behind<br>AquaVision</h1>
+        <p class="ph-subtitle reveal">
+            Underwater images suffer from wavelength-dependent light absorption and scattering —
+            causing colour casts, haze, blur, and low visibility. AquaVision automatically
+            diagnoses and corrects each degradation type.
+        </p>
+
+        <!-- Big accuracy badge -->
+        <div class="acc-badge reveal">
+            <div class="acc-badge-num"><span data-countup="93" data-suffix="%">0%</span></div>
+            <div class="acc-badge-info">
+                <strong>MobileNetV2 — 93% Classification Accuracy</strong>
+                <p>
+                    Trained on the UIEB benchmark (890 underwater images).
+                    Best accuracy–speed trade-off across three trained architectures.
+                    Used in production for all real-time image and video enhancement.
+                </p>
+            </div>
+        </div>
+
+        <!-- Pipeline -->
+        <div class="section-sep">01 — Enhancement Pipeline</div>
+        <div class="pipeline-h reveal">
+            <div class="pipe-node">
+                <div class="pipe-node-icon" aria-hidden="true"><i class="fas fa-upload"></i></div>
+                <div class="pipe-node-label">Upload</div>
+            </div>
+            <div class="pipe-node">
+                <div class="pipe-node-icon" aria-hidden="true"><i class="fas fa-brain"></i></div>
+                <div class="pipe-node-label">Classify Degradation</div>
+            </div>
+            <div class="pipe-node">
+                <div class="pipe-node-icon" aria-hidden="true"><i class="fas fa-cloud-sun"></i></div>
+                <div class="pipe-node-label">Dark Channel Prior</div>
+            </div>
+            <div class="pipe-node">
+                <div class="pipe-node-icon" aria-hidden="true"><i class="fas fa-palette"></i></div>
+                <div class="pipe-node-label">Colour Correct</div>
+            </div>
+            <div class="pipe-node">
+                <div class="pipe-node-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></div>
+                <div class="pipe-node-label">Laplacian Fusion</div>
+            </div>
+            <div class="pipe-node">
+                <div class="pipe-node-icon" aria-hidden="true"><i class="fas fa-sliders"></i></div>
+                <div class="pipe-node-label">CLAHE + Sharpen</div>
+            </div>
+            <div class="pipe-node" style="border-right: 1px solid rgba(6,214,240,0.3);">
+                <div class="pipe-node-icon" style="color: var(--green); border-color: rgba(0,255,136,0.3);" aria-hidden="true"><i class="fas fa-check"></i></div>
+                <div class="pipe-node-label" style="color: var(--green);">Output</div>
+            </div>
+        </div>
+
+        <!-- Degradation classes -->
+        <div class="section-sep">02 — 9 Degradation Classes</div>
+        <div class="class-chips reveal">
+            <span class="class-chip">Blue Tint</span>
+            <span class="class-chip">Green Tint</span>
+            <span class="class-chip">Red Tint</span>
+            <span class="class-chip">Blurry</span>
+            <span class="class-chip">Hazy</span>
+            <span class="class-chip">Noisy</span>
+            <span class="class-chip">Low Illumination</span>
+            <span class="class-chip">High Contrast</span>
+            <span class="class-chip">Raw / Clear</span>
+        </div>
+
+        <!-- Info grid -->
+        <div class="section-sep">03 — Architectures &amp; Metrics</div>
+        <div class="info-grid">
+            <div class="info-cell reveal">
+                <h3><i class="fas fa-network-wired" aria-hidden="true"></i> Architectures Trained</h3>
+                <p>
+                    Three CNNs — <strong>Custom CNN</strong>, <strong>MobileNetV2</strong>,
+                    and <strong>ResNet-50</strong> — were trained and compared on the UIEB benchmark.
+                    MobileNetV2 achieved 93% accuracy and is deployed in production.
+                    All three architectures are available in the AI Reports page.
+                </p>
+            </div>
+            <div class="info-cell reveal">
+                <h3><i class="fas fa-flask" aria-hidden="true"></i> Enhancement Strategy</h3>
+                <p>
+                    Images: 12-stage adaptive pipeline (dark channel prior, guided filter,
+                    multi-scale Laplacian fusion, CLAHE, Lanczos4 upscaling). Video:
+                    frame-by-frame temporal OpenCV pipeline with H.264 re-encoding. Both
+                    pipelines use per-class parameter calibration.
+                </p>
+            </div>
+        </div>
+
+        <!-- Quality metrics -->
+        <div class="section-sep">04 — Quality Metrics</div>
+        <div class="metrics-list">
+            <div class="metric-item">
+                <span class="metric-name">UCIQE</span>
+                <span class="metric-desc">Underwater Colour Image Quality Evaluator — chroma, saturation, and contrast</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-name">UIQM</span>
+                <span class="metric-desc">Panetta et al. 2016 — colourfulness, sharpness, contrast combined</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-name">PSNR</span>
+                <span class="metric-desc">Peak Signal-to-Noise Ratio — fidelity to reference image (dB)</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-name">SSIM</span>
+                <span class="metric-desc">Structural Similarity Index — perceptual quality preservation</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-name">Sharpness</span>
+                <span class="metric-desc">Laplacian variance — measures edge definition and detail recovery</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-name">Colorfulness</span>
+                <span class="metric-desc">Hasler &amp; Suesstrunk metric — chrominance richness after enhancement</span>
+            </div>
+        </div>
+
+        <!-- Body copy -->
+        <div class="section-sep">05 — Project Context</div>
+        <p class="body-text reveal">
+            AquaVision was developed as a <strong>B.Tech final-year project</strong> exploring intelligent
+            quality-aware underwater image and video enhancement. The system demonstrates a complete
+            pipeline: from deep learning classification to physics-guided multi-scale restoration, to
+            quantitative quality measurement — all served via a live Flask web application with a
+            secure REST API.
+        </p>
+        <p class="body-text reveal">
+            The UIEB (Underwater Image Enhancement Benchmark) dataset was used for training and evaluation.
+            All three architectures (Custom CNN, MobileNetV2, ResNet-50) were trained from scratch using
+            PyTorch, with MobileNetV2 selected for production based on its <strong>93% accuracy</strong>
+            at <strong>real-time inference speeds</strong>.
+        </p>
+    </main>
+
+    <footer class="footer-abyssal" role="contentinfo">
+        <p>© 2026 AquaVision · B.Tech Project · Adaptive Underwater Image Enhancement</p>
+        <a href="{{ url_for('model') }}">View AI Reports →</a>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="{{ url_for('static', filename='js/abyssal.js') }}" defer></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').catch(function(){});
+        }
+    </script>
+</body>
+</html>

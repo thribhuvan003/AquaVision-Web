@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <title>Video Processing — AquaVision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+    <!-- Include the same styles from video_prediction.html -->
+    <style>
+        .page-content {
+            position: relative; z-index: 1;
+            max-width: 960px; margin: 0 auto;
+            padding: 100px 5% 6rem;
+        }
+
+        .ph-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem; font-weight: 700;
+            color: var(--cyan); text-transform: uppercase; letter-spacing: 0.14em;
+            display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem;
+        }
+        .ph-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--cyan); }
+        .ph-title { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; letter-spacing: -0.04em; color: var(--white); margin-bottom: 2rem; line-height: 1; }
+
+        /* Step chain */
+        .step-chain {
+            display: flex; align-items: center; gap: 0; justify-content: center; margin-top: 4rem; margin-bottom: 3rem;
+        }
+
+        .step-node {
+            display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+        }
+
+        .step-circle {
+            width: 48px; height: 48px;
+            border: var(--b1); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; color: var(--gray-2);
+            transition: all 0.4s;
+        }
+
+        .step-node.active .step-circle { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 20px rgba(6,214,240,0.2); }
+        .step-node.done .step-circle { border-color: var(--green); color: var(--green); }
+
+        .step-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem; color: var(--gray-2);
+            text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        .step-node.active .step-label { color: var(--cyan); }
+        .step-node.done  .step-label  { color: var(--green); }
+
+        .step-conn {
+            width: 80px; height: 1px;
+            background: var(--black-3); margin-bottom: 1.6rem; position: relative; overflow: hidden;
+        }
+        .step-conn.active::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            animation: conn-slide 1.2s linear infinite;
+        }
+        .step-conn.done { background: var(--green); }
+        @keyframes conn-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        .status-message {
+            text-align: center; font-family: 'Syne', sans-serif; font-size: 1.4rem; color: var(--white); margin-bottom: 0.5rem;
+        }
+        .status-sub {
+            text-align: center; color: var(--gray-1); font-size: 0.9rem; margin-bottom: 3rem;
+        }
+
+        /* Result container */
+        #resultContainer { display: none; }
+        
+        .class-bar-v {
+            display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+            padding: 1.5rem 2rem; background: var(--black-1); border: var(--b1); margin-bottom: 1.5rem;
+        }
+        .class-name-v { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--cyan); letter-spacing: -0.02em; text-transform: capitalize; }
+        .conf-bar-wrap { display: flex; align-items: center; gap: 0.6rem; }
+        .conf-bar-bg { width: 100px; height: 3px; background: var(--black-3); }
+        .conf-bar-fill { height: 100%; background: var(--cyan); transition: width 0.5s ease;}
+        .conf-val { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--green); font-weight: 700; }
+        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.05); border: var(--b1); margin-bottom: 1.5rem; }
+        .video-card { background: var(--black); overflow: hidden; }
+        .video-card-hdr { padding: 0.8rem 1.2rem; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: 700; color: var(--gray-1); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: var(--b1); display: flex; align-items: center; gap: 0.5rem; }
+        .video-card video { display: block; width: 100%; background: #000; }
+        .stat-tag { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.8rem; border: 1px solid rgba(6,214,240,0.2); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.07em; }
+        .stat-tag-red { color: var(--red); border-color: rgba(255,58,92,0.2); }
+        .btn-row { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-top: 2rem; }
+
+        #errorContainer { display: none; padding: 3rem 2rem; border: 1px solid rgba(255,58,92,0.18); text-align: center; }
+        #errorContainer .err-icon { font-size: 3rem; color: var(--red); margin-bottom: 1rem; }
+        #errorMessage { color: var(--red); font-weight: 600; margin-bottom: 1.5rem; }
+
+        @media (max-width: 700px) {
+            .video-grid { grid-template-columns: 1fr; }
+            .class-bar-v { flex-direction: column; align-items: flex-start; }
+            .step-conn { width: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+
+    <nav class="nav-abyssal" role="navigation" aria-label="Main navigation">
+        <a href="{{ url_for('home') }}" class="nav-logo">
+            AquaVision <span class="nav-logo-dot" aria-hidden="true"></span>
+        </a>
+        <ul class="nav-links-abyssal" role="list">
+            <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('prediction') }}">Enhance Image</a></li>
+            <li><a href="{{ url_for('video_prediction') }}" class="active">Enhance Video</a></li>
+            <li><a href="{{ url_for('batch_page') }}">Batch</a></li>
+            <li><a href="{{ url_for('my_videos') }}">My Videos</a></li>
+            <li><a href="{{ url_for('gallery') }}">Gallery</a></li>
+            <li><a href="{{ url_for('about') }}">Research</a></li>
+            <li><a href="{{ url_for('api_docs') }}">API</a></li>
+            <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
+        </ul>
+    </nav>
+
+    <main class="page-content" id="main-content">
+        <div class="ph-eyebrow">Video Task</div>
+        <h1 class="ph-title">Processing Status</h1>
+
+        <div id="pollingContainer">
+            <div class="step-chain">
+                <div class="step-node done" id="step1">
+                    <div class="step-circle"><i class="fas fa-cloud-arrow-up" aria-hidden="true"></i></div>
+                    <span class="step-label">Upload</span>
+                </div>
+                <div class="step-conn done" id="conn1"></div>
+                <div class="step-node active" id="step2">
+                    <div class="step-circle"><i class="fas fa-cogs" aria-hidden="true"></i></div>
+                    <span class="step-label">Processing</span>
+                </div>
+                <div class="step-conn active" id="conn2"></div>
+                <div class="step-node" id="step3">
+                    <div class="step-circle"><i class="fas fa-check" aria-hidden="true"></i></div>
+                    <span class="step-label">Complete</span>
+                </div>
+            </div>
+            
+            <div class="status-message" id="statusMessage">Enhancing your video…</div>
+            <div class="status-sub">You can safely close this page. The video is processing in the background.</div>
+            
+            <div class="btn-row">
+                <a href="{{ url_for('video_prediction') }}" class="btn-ghost">
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Enhancer
+                </a>
+            </div>
+        </div>
+
+        <div id="errorContainer">
+            <div class="err-icon" aria-hidden="true"><i class="fas fa-circle-exclamation"></i></div>
+            <p id="errorMessage">An error occurred.</p>
+            <div class="btn-row">
+                <a href="{{ url_for('video_prediction') }}" class="btn-primary">
+                    <i class="fas fa-redo" aria-hidden="true"></i> Try Again
+                </a>
+            </div>
+        </div>
+
+        <div id="resultContainer">
+            <div class="class-bar-v">
+                <div>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.3rem;">Detected Degradation</div>
+                    <div class="class-name-v" id="resPrediction">--</div>
+                </div>
+                <div class="conf-bar-wrap">
+                    <div class="conf-bar-bg">
+                        <div class="conf-bar-fill" id="resConfBar" style="width:0%"></div>
+                    </div>
+                    <span class="conf-val" id="resConfText">0%</span>
+                </div>
+                <span class="stat-tag">
+                    <i class="fas fa-film" aria-hidden="true"></i>
+                    <span id="resFrames">--</span> frames
+                </span>
+                <span class="stat-tag stat-tag-red" id="resCapped" style="display:none;">
+                    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                    Capped
+                </span>
+            </div>
+
+            <div class="video-grid" id="videoGrid">
+                <!-- Populated dynamically -->
+            </div>
+
+            <div class="btn-row" id="downloadLinks">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer-abyssal" role="contentinfo">
+        <p>© 2026 AquaVision · Adaptive Frame-by-Frame Video Enhancement</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="{{ url_for('static', filename='js/abyssal.js') }}" defer></script>
+    <script>
+        const taskId = "{{ task_id }}";
+        const pollInterval = 2500; // 2.5 seconds
+        let pollTimer = null;
+
+        function updateUI(data) {
+            const status = data.status;
+            
+            if (status === 'PENDING' || status === 'PROCESSING') {
+                // Keep polling
+                let msg = status === 'PENDING' ? 'Waiting in queue...' : 'Enhancing your video…';
+                if (status === 'PROCESSING' && data.result && data.result.frames_processed) {
+                    msg = `Enhancing your video… (${data.result.frames_processed} / ${data.result.total_frames || '?'} frames)`;
+                }
+                document.getElementById('statusMessage').textContent = msg;
+            } else if (status === 'COMPLETED') {
+                clearInterval(pollTimer);
+                
+                // Update Steps
+                document.getElementById('step2').classList.remove('active');
+                document.getElementById('step2').classList.add('done');
+                document.getElementById('conn2').classList.remove('active');
+                document.getElementById('conn2').classList.add('done');
+                
+                var step3 = document.getElementById('step3');
+                if (step3) {
+                    step3.classList.add('done');
+                }
+
+                // Hide Polling container
+                document.getElementById('pollingContainer').style.display = 'none';
+
+                // Populate Result Container
+                const res = data.result || {};
+                document.getElementById('resPrediction').textContent = (res.prediction || '--').replace(/_/g, ' ');
+                document.getElementById('resConfBar').style.width = (res.confidence || 0) + '%';
+                document.getElementById('resConfText').textContent = (res.confidence || 0) + '%';
+                
+                const frameText = res.frames_processed ? `${res.frames_processed} / ${res.total_frames || '?'}` : '--';
+                document.getElementById('resFrames').textContent = frameText;
+                
+                if (res.capped) {
+                    document.getElementById('resCapped').style.display = 'inline-flex';
+                }
+
+                // Setup Videos
+                let videoNodes = '';
+                let dwnNodes = '';
+                
+                if (data.enhanced_name) {
+                    videoNodes += `
+                        <div class="video-card">
+                            <div class="video-card-hdr"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Enhanced</div>
+                            <video controls preload="auto" playsinline autoplay muted>
+                                <source src="/view_video_enhanced/${data.enhanced_name}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    `;
+                    dwnNodes += `
+                        <a href="/download_video/${data.enhanced_name}" class="btn-primary">
+                            <i class="fas fa-download" aria-hidden="true"></i> Download Enhanced Video
+                        </a>
+                    `;
+                }
+
+                dwnNodes += `
+                    <a href="/video_prediction" class="btn-ghost">
+                        <i class="fas fa-plus" aria-hidden="true"></i> New Video
+                    </a>
+                `;
+
+                document.getElementById('videoGrid').innerHTML = videoNodes;
+                document.getElementById('videoGrid').style.gridTemplateColumns = '1fr';
+                document.getElementById('downloadLinks').innerHTML = dwnNodes;
+
+                document.getElementById('resultContainer').style.display = 'block';
+
+            } else if (status === 'FAILED') {
+                clearInterval(pollTimer);
+                document.getElementById('pollingContainer').style.display = 'none';
+                
+                const errText = (data.result && data.result.error) ? data.result.error : 'An unknown error occurred during video processing.';
+                document.getElementById('errorMessage').textContent = errText;
+                document.getElementById('errorContainer').style.display = 'block';
+            }
+        }
+
+        function pollStatus() {
+            fetch(`/api/task_status/${taskId}`)
+                .then(r => {
+                    if (!r.ok) throw new Error("Task not found or unauthorized");
+                    return r.json();
+                })
+                .then(data => {
+                    updateUI(data);
+                })
+                .catch(err => {
+                    console.error("Polling error:", err);
+                    clearInterval(pollTimer);
+                    document.getElementById('pollingContainer').style.display = 'none';
+                    document.getElementById('errorMessage').textContent = err.message;
+                    document.getElementById('errorContainer').style.display = 'block';
+                });
+        }
+
+        // Start polling
+        pollTimer = setInterval(pollStatus, pollInterval);
+        // Initial poll right away
+        pollStatus();
+    </script>
+</body>
+</html>

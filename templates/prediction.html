@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <meta name="description" content="Enhance underwater images with AquaVision's AI-powered adaptive pipeline.">
+    <link rel="manifest" href="/static/manifest.json">
+    <title>Enhance Image — AquaVision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+    <style>
+        .page-main{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:100px 5% 5rem}
+
+        /* Processing overlay */
+        .processing-overlay{display:none;position:fixed;inset:0;z-index:9000;background:rgba(5,5,5,0.94);backdrop-filter:blur(16px);flex-direction:column;align-items:center;justify-content:center;gap:1.6rem}
+        .processing-overlay.active{display:flex}
+        .spinner-v2{position:relative;width:64px;height:64px}
+        .spinner-v2 .ring{position:absolute;inset:0;border:1.5px solid transparent;border-radius:50%}
+        .spinner-v2 .ring:nth-child(1){border-top-color:var(--cyan);animation:spin 1s linear infinite}
+        .spinner-v2 .ring:nth-child(2){border-right-color:rgba(6,214,240,0.4);animation:spin 1.6s linear infinite reverse;inset:6px}
+        .spinner-v2 .ring:nth-child(3){border-bottom-color:rgba(6,214,240,0.15);animation:spin 2.2s linear infinite;inset:12px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .proc-title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--white);letter-spacing:-0.02em}
+        .proc-sub{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gray-2);max-width:340px;text-align:center;line-height:1.6;letter-spacing:0.03em}
+        .sonar-wrap{width:320px;height:200px;position:relative;overflow:hidden;border:var(--b1)}
+        .sonar-canvas{display:none;width:100%;height:100%}
+        .sonar-line{display:none;position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);box-shadow:0 0 12px var(--cyan);opacity:0.7}
+        .terminal-text{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan);max-width:400px;text-align:center;letter-spacing:0.03em;opacity:0.8;min-height:1.2em}
+
+        /* Upload layout */
+        .upload-layout{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start}
+        .upload-zone{--mx:50%;--my:50%;border:1px dashed rgba(6,214,240,0.22);padding:3.5rem 2rem;text-align:center;cursor:pointer;position:relative;overflow:hidden;background:radial-gradient(circle 300px at var(--mx) var(--my),rgba(6,214,240,0.03) 0%,transparent 80%),rgba(255,255,255,0.01);transition:border-color 0.25s}
+        .upload-zone:hover,.upload-zone.drag-over{border-color:var(--cyan)}
+        .upload-zone .zi{font-size:2.2rem;color:var(--cyan);margin-bottom:1rem;display:block;opacity:0.7;transition:transform 0.3s ease}
+        .upload-zone:hover .zi{transform:translateY(-4px)}
+        .upload-zone h2{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;margin-bottom:0.4rem;color:var(--white);letter-spacing:-0.02em}
+        .upload-zone p{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--gray-2)}
+        .upload-zone .file-name{margin-top:0.8rem;color:var(--cyan);font-weight:600;font-size:0.78rem;font-family:'JetBrains Mono',monospace}
+        .preview-img{max-width:100%;max-height:200px;margin-top:1rem;display:none;border:var(--b1)}
+        .hidden-input{display:none}
+
+        /* Info panel */
+        .info-panel{display:flex;flex-direction:column;gap:1rem}
+        .info-card{background:var(--black-1);border:var(--b1);padding:1.3rem}
+        .info-card h3{font-family:'Syne',sans-serif;font-size:0.88rem;font-weight:800;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem;color:var(--white)}
+        .info-card h3 i{color:var(--cyan);font-size:0.82rem}
+        .mini-steps{display:flex;flex-direction:column;gap:0.55rem}
+        .mini-step{display:flex;align-items:center;gap:0.65rem;font-size:0.78rem;color:var(--gray-1);font-family:'Space Grotesk',sans-serif}
+        .mini-step .num{width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:rgba(6,214,240,0.06);color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:700;flex-shrink:0;border:var(--b1)}
+        .pill-grid{display:flex;flex-wrap:wrap;gap:0.4rem}
+        .pill{padding:0.2rem 0.6rem;font-size:0.65rem;font-weight:700;background:rgba(6,214,240,0.04);border:var(--b1);color:var(--gray-1);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.04em}
+
+        /* Strength selector */
+        .str-grp{display:flex;gap:0.4rem;margin:0.8rem 0 0.4rem;justify-content:center}
+        .str-grp label{cursor:pointer}
+        .str-grp input{display:none}
+        .str-opt{display:inline-flex;align-items:center;gap:0.3rem;padding:0.4rem 0.85rem;font-family:'JetBrains Mono',monospace;font-size:0.68rem;font-weight:700;border:var(--b1);color:var(--gray-2);transition:all 0.2s;text-transform:uppercase;letter-spacing:0.04em}
+        .str-grp input:checked+.str-opt{border-color:rgba(6,214,240,0.35);color:var(--cyan);background:rgba(6,214,240,0.05)}
+        .str-opt:hover{color:var(--off-white);border-color:rgba(255,255,255,0.14)}
+
+        /* Buttons row */
+        .btn-row{display:flex;gap:0.8rem;flex-wrap:wrap;justify-content:center;margin-top:1.5rem}
+        .preview-result{margin-top:0.8rem;text-align:center;display:none}
+        .preview-result img{max-width:180px;border:var(--b1)}
+        .preview-result .preview-label{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--gray-2);margin-top:0.25rem;text-transform:uppercase;letter-spacing:0.06em}
+
+        /* Result section */
+        .result-section{animation:emerge 0.6s cubic-bezier(0.22,1,0.36,1) both}
+        @keyframes emerge{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+        /* Classification bar */
+        .class-bar{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;padding:1.3rem 1.5rem;background:var(--black-1);border:var(--b1);margin-bottom:1.5rem}
+        .class-eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:700;color:var(--gray-1);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.2rem}
+        .class-name{font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;color:var(--cyan);letter-spacing:-0.02em}
+        .conf-meter{display:flex;align-items:center;gap:0.5rem}
+        .conf-bar-bg{width:100px;height:2px;background:var(--black-3);overflow:hidden}
+        .conf-bar-fill{height:100%;background:var(--green);transition:width 1s cubic-bezier(0.22,1,0.36,1)}
+        .conf-val{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:0.82rem;color:var(--green)}
+        .mode-tag{margin-left:auto;padding:0.2rem 0.65rem;font-size:0.62rem;font-weight:700;background:rgba(6,214,240,0.06);border:var(--b2);color:var(--cyan);font-family:'JetBrains Mono',monospace;letter-spacing:0.04em;text-transform:uppercase}
+        .imp-badge{display:inline-flex;align-items:center;gap:0.35rem;padding:0.25rem 0.7rem;font-family:'JetBrains Mono',monospace;font-size:0.68rem;font-weight:700;white-space:nowrap}
+        .imp-badge.positive{border:1px solid rgba(0,255,136,0.25);color:var(--green);background:rgba(0,255,136,0.05)}
+        .imp-badge.neutral{border:var(--b1);color:var(--gray-1)}
+        .imp-badge.negative{border:1px solid rgba(255,58,92,0.2);color:var(--red);background:rgba(255,58,92,0.04)}
+
+        /* Non-underwater warning */
+        .uw-warn{display:flex;align-items:flex-start;gap:0.8rem;padding:1rem 1.2rem;margin-bottom:1.3rem;background:rgba(255,184,0,0.04);border:1px solid rgba(255,184,0,0.18);border-left:2px solid var(--amber)}
+        .uw-warn .wi{font-size:1.3rem;color:var(--amber);flex-shrink:0;padding-top:0.1rem}
+        .uw-warn-body{flex:1}
+        .uw-warn-title{font-weight:700;color:var(--amber);font-size:0.82rem;margin-bottom:0.2rem;font-family:'Space Grotesk',sans-serif}
+        .uw-warn-sub{font-size:0.78rem;color:var(--gray-1);line-height:1.55}
+        .uw-warn-close{background:none;border:none;color:var(--gray-2);cursor:pointer;font-size:0.9rem;padding:0.2rem;transition:color 0.2s;flex-shrink:0}
+        .uw-warn-close:hover{color:var(--off-white)}
+
+        /* Comparison side by side */
+        .comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,0.04);margin-bottom:1.5rem;overflow:hidden}
+        .comp-panel{position:relative;background:var(--black)}
+        .comp-panel img{width:100%;display:block;aspect-ratio:16/10;object-fit:cover}
+        .comp-label{position:absolute;top:0.6rem;font-family:'JetBrains Mono',monospace;font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:0.2rem 0.5rem;background:rgba(0,0,0,0.7)}
+        .comp-label.orig{left:0.6rem;color:var(--gray-1)}
+        .comp-label.enh{right:0.6rem;color:var(--cyan)}
+
+        /* Metrics grid */
+        .metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,0.04);margin-bottom:1.5rem}
+        .metric-card{background:var(--black);padding:1.1rem;border:none}
+        .metric-card h4{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--gray-1);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.7rem;display:flex;align-items:center;gap:0.4rem;font-weight:700}
+        .metric-card h4 i{color:var(--cyan);font-size:0.72rem}
+        .metric-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.3rem;font-size:0.78rem}
+        .metric-row .lbl{color:var(--gray-2);font-family:'Space Grotesk',sans-serif;font-size:0.74rem}
+        .metric-row .val{font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem}
+        .metric-row .val.orig{color:var(--gray-2)}
+        .metric-row .val.enh{color:var(--green)}
+        .mbar{width:100%;height:2px;background:var(--black-3);margin:0.15rem 0 0.5rem;overflow:hidden}
+        .mbar-fill{height:100%;background:var(--cyan);transition:width 1.2s cubic-bezier(0.22,1,0.36,1)}
+        .metric-card.underwater{border-left:1px solid rgba(0,255,136,0.2)}
+
+        /* Tooltip */
+        .tip-btn{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;background:rgba(255,255,255,0.04);border:var(--b1);color:var(--gray-2);font-size:0.5rem;font-family:'Space Grotesk',sans-serif;font-weight:700;cursor:help;position:relative;flex-shrink:0;margin-left:0.15rem;transition:border-color 0.2s,color 0.2s}
+        .tip-btn:hover{border-color:rgba(6,214,240,0.3);color:var(--cyan)}
+        .tip-btn::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:rgba(5,5,5,0.96);border:var(--b1);padding:0.5rem 0.65rem;font-size:0.7rem;font-weight:400;color:var(--gray-1);width:max-content;max-width:200px;white-space:normal;z-index:200;opacity:0;pointer-events:none;line-height:1.4;font-family:'Space Grotesk',sans-serif;font-style:normal;letter-spacing:normal;text-transform:none;transition:opacity 0.15s}
+        .tip-btn:hover::after,.tip-btn:focus::after{opacity:1}
+
+        /* Pipeline card */
+        .pipeline-card{background:var(--black-1);border:var(--b2);padding:1.3rem;margin-bottom:1.5rem}
+        .pipeline-card h4{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--cyan);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.4rem;font-weight:700}
+        .pipeline-card .pline-text{font-size:0.82rem;color:var(--gray-1);line-height:1.75;font-family:'Space Grotesk',sans-serif}
+        .pipeline-card .pline-text strong{color:var(--off-white);font-weight:600}
+
+        /* EXIF card */
+        .exif-card{background:var(--black-1);border:var(--b1);padding:1.1rem 1.3rem;margin-bottom:1.5rem}
+        .exif-card h4{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray-1);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.7rem;display:flex;align-items:center;gap:0.4rem;font-weight:700}
+        .exif-card h4 i{color:var(--cyan)}
+        .exif-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.5rem}
+        .exif-item .exif-label{font-family:'JetBrains Mono',monospace;font-size:0.56rem;font-weight:700;color:var(--gray-2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.1rem}
+        .exif-item .exif-val{color:var(--off-white);font-size:0.78rem;font-family:'Space Grotesk',sans-serif}
+
+        /* Export row */
+        .export-row{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap}
+        .export-select{background:rgba(255,255,255,0.025);color:var(--white);border:var(--b1);padding:0.55rem 0.8rem;font-family:'JetBrains Mono',monospace;font-size:0.72rem;outline:none;cursor:pointer}
+        .export-select:focus{border-color:rgba(6,214,240,0.3)}
+
+        /* WebGL 3D Overlay */
+        .webgl-overlay { position: fixed; inset: 0; z-index: 9999; background: #000; display: none; opacity: 0; flex-direction: column; }
+        .webgl-container { flex: 1; position: relative; width: 100%; height: 100%; }
+        .webgl-close { position: absolute; top: 2rem; right: 2rem; z-index: 10000; background: rgba(255,255,255,0.1); border: var(--b1); color: var(--white); font-size: 1.5rem; width: 48px; height: 48px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+        .webgl-close:hover { background: var(--amber); color: #000; }
+        .webgl-help { position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 0.8rem 1.5rem; border: var(--b1); border-radius: 4px; color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; pointer-events: none; z-index: 10000; }
+
+        @media(max-width:768px){.upload-layout{grid-template-columns:1fr}.metrics-grid{grid-template-columns:1fr}.comp-grid{grid-template-columns:1fr}.class-bar{flex-direction:column;align-items:flex-start}}
+    </style>
+</head>
+<body>
+
+
+    <!-- Processing overlay -->
+    <div class="processing-overlay" id="processingOverlay" role="alert" aria-live="assertive">
+        <div class="spinner-v2"><div class="ring"></div><div class="ring"></div><div class="ring"></div></div>
+        <div class="proc-title">Analyzing underwater degradation…</div>
+        <div class="sonar-wrap">
+            <canvas class="sonar-canvas" id="sonarCanvas"></canvas>
+            <div class="sonar-line" id="sonarLine"></div>
+        </div>
+        <div class="terminal-text" id="terminalText">Initializing MobileNetV2 classifier...</div>
+        <div class="proc-sub">12-stage adaptive pipeline → Universal Entropy quality metrics</div>
+    </div>
+
+    <!-- 3D WebGL Overlay -->
+    <div class="webgl-overlay" id="webglOverlay" role="dialog" aria-modal="true">
+        <button class="webgl-close" id="webglClose" title="Close 3D View" aria-label="Close 3D View"><i class="fas fa-xmark"></i></button>
+        <div class="webgl-container" id="webglContainer"></div>
+        <div class="webgl-help">
+            <i class="fas fa-mouse"></i> Click & Drag to rotate · Scroll to zoom
+        </div>
+    </div>
+
+    <nav class="nav-abyssal" role="navigation" aria-label="Main navigation">
+        <a href="{{ url_for('home') }}" class="nav-logo">AquaVision <span class="nav-logo-dot"></span></a>
+        <ul class="nav-links-abyssal" role="list">
+            <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('prediction') }}" class="active">Enhance</a></li>
+            <li><a href="{{ url_for('video_prediction') }}">Video</a></li>
+            <li><a href="{{ url_for('batch_page') }}">Batch</a></li>
+            <li><a href="{{ url_for('my_videos') }}">My Videos</a></li>
+            <li><a href="{{ url_for('gallery') }}">Gallery</a></li>
+            <li><a href="{{ url_for('about') }}">About</a></li>
+            <li><a href="{{ url_for('api_docs') }}">API</a></li>
+            <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
+        </ul>
+    </nav>
+
+    <main class="page-main" id="main-content">
+
+        <!-- Ã¢â€¢Ã¢â€¢Ã¢â€¢ UPLOAD STATE Ã¢â€¢Ã¢â€¢Ã¢â€¢ -->
+        {% if not result %}
+        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+            <div class="upload-layout reveal">
+                <div>
+                    <div class="upload-zone" id="dropZone">
+                        <span class="zi"><i class="fas fa-water"></i></span>
+                        <h2>Drop your underwater image</h2>
+                        <p>or click to browse · JPEG PNG BMP TIFF</p>
+                        <div class="file-name" id="fileName"></div>
+                        <img class="preview-img" id="previewImg" alt="Preview">
+                    </div>
+                    <input type="file" name="file" accept="image/*" class="hidden-input" id="fileInput" required>
+                    <div id="submitRow" style="display:none;">
+                        <div class="str-grp">
+                            <label><input type="radio" name="strength" value="mild"><span class="str-opt"><i class="fas fa-feather"></i> Mild</span></label>
+                            <label><input type="radio" name="strength" value="standard" checked><span class="str-opt"><i class="fas fa-sliders"></i> Standard</span></label>
+                            <label><input type="radio" name="strength" value="strong"><span class="str-opt"><i class="fas fa-bolt"></i> Strong</span></label>
+                        </div>
+                        <div class="btn-row">
+                            <button type="submit" class="btn-primary" id="submitBtn">
+                                <i class="fas fa-wand-magic-sparkles"></i> Enhance Image
+                            </button>
+                        </div>
+                        <div class="preview-result" id="previewResult">
+                            <img id="previewEnhanced" alt="Quick preview">
+                            <div class="preview-label">Quick Preview (200px)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-panel">
+                    <div class="info-card">
+                        <h3><i class="fas fa-route"></i> What Happens Next</h3>
+                        <div class="mini-steps">
+                            <div class="mini-step"><div class="num">01</div>Image enters processing queue</div>
+                            <div class="mini-step"><div class="num">02</div>MobileNetV2 classifies degradation</div>
+                            <div class="mini-step"><div class="num">03</div>Targeted enhancement algorithm runs</div>
+                            <div class="mini-step"><div class="num">04</div>Adaptive boost if similarity > 95%</div>
+                            <div class="mini-step"><div class="num">05</div>Universal quality metrics computed</div>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <h3><i class="fas fa-tags"></i> Detected Types</h3>
+                        <div class="pill-grid">
+                            <span class="pill">Blue Tint</span><span class="pill">Green Tint</span>
+                            <span class="pill">Red Tint</span><span class="pill">Blurry</span>
+                            <span class="pill">Hazy</span><span class="pill">Low Light</span>
+                            <span class="pill">Noisy</span><span class="pill">High Contrast</span>
+                            <span class="pill">Raw</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% endif %}
+
+        <!-- Ã¢â€¢Ã¢â€¢Ã¢â€¢ NOT UNDERWATER STATE Ã¢â€¢Ã¢â€¢Ã¢â€¢ -->
+        {% if result and result.not_underwater %}
+        <div style="text-align:center;padding:4rem 2rem;max-width:560px;margin:0 auto" class="reveal">
+            <div style="width:64px;height:64px;border:var(--b2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:var(--amber);margin:0 auto 1.3rem">
+                <i class="fas fa-fish-fins"></i>
+            </div>
+            <h2 style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;margin-bottom:0.6rem;letter-spacing:-0.02em;color:var(--white)">Not an Underwater Image</h2>
+            <p style="color:var(--gray-1);font-size:0.88rem;line-height:1.65;margin-bottom:1.5rem;font-family:'Space Grotesk',sans-serif">Our system detected this image doesn't have the typical characteristics of an underwater photo.</p>
+            <div style="background:var(--black-1);border:var(--b1);padding:1rem 1.3rem;margin-bottom:1.5rem;text-align:left">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.6rem">Underwater images typically have</div>
+                <div style="display:flex;flex-direction:column;gap:0.4rem;font-size:0.8rem;color:var(--gray-1);font-family:'Space Grotesk',sans-serif">
+                    <div><i class="fas fa-check" style="color:var(--cyan);margin-right:0.4rem"></i>Strong blue or green colour cast</div>
+                    <div><i class="fas fa-check" style="color:var(--cyan);margin-right:0.4rem"></i>Reduced red channel (water absorbs red light)</div>
+                    <div><i class="fas fa-check" style="color:var(--cyan);margin-right:0.4rem"></i>Lower overall contrast due to light scattering</div>
+                    <div><i class="fas fa-check" style="color:var(--cyan);margin-right:0.4rem"></i>Haze or blur from suspended particles</div>
+                </div>
+            </div>
+            <div class="btn-row"><a href="{{ url_for('prediction') }}" class="btn-primary"><i class="fas fa-redo"></i> Try Another Image</a></div>
+        </div>
+        {% endif %}
+
+        <!-- Ã¢â€¢Ã¢â€¢Ã¢â€¢ RESULT STATE Ã¢â€¢Ã¢â€¢Ã¢â€¢ -->
+        {% if result and 'error' not in result and not result.not_underwater %}
+        <div class="result-section">
+            <div class="class-bar">
+                <div>
+                    <div class="class-eyebrow">Detected Degradation</div>
+                    <div class="class-name">{{ result.prediction | replace('_', ' ') | title }}</div>
+                </div>
+                <div class="conf-meter">
+                    <div class="conf-bar-bg"><div class="conf-bar-fill" style="width:0%" data-width="{{ result.confidence }}%"></div></div>
+                    <span class="conf-val">{{ result.confidence }}%</span>
+                </div>
+                {% if result.improvement_pct is not none and result.improvement_pct is defined %}
+                {% if result.improvement_pct > 0 %}
+                <div class="imp-badge positive"><i class="fas fa-arrow-trend-up"></i> +{{ result.improvement_pct }}% Quality</div>
+                {% elif result.improvement_pct == 0 %}
+                <div class="imp-badge neutral"><i class="fas fa-minus"></i> No change</div>
+                {% else %}
+                <div class="imp-badge negative"><i class="fas fa-arrow-trend-down"></i> {{ result.improvement_pct }}%</div>
+                {% endif %}
+                {% endif %}
+                {% if result.enhancement_mode %}
+                <div class="mode-tag"><i class="fas fa-filter"></i> {{ result.enhancement_mode }}</div>
+                {% endif %}
+            </div>
+
+            {% if result.not_underwater_warning %}
+            <div class="uw-warn" id="uwWarn">
+                <div class="wi"><i class="fas fa-triangle-exclamation"></i></div>
+                <div class="uw-warn-body">
+                    <div class="uw-warn-title">This may not be an underwater image</div>
+                    <div class="uw-warn-sub">Our heuristic didn't detect the typical blue/green cast. Enhancement was still applied — results may differ.</div>
+                </div>
+                <button class="uw-warn-close" onclick="document.getElementById('uwWarn').style.display='none'" title="Dismiss"><i class="fas fa-xmark"></i></button>
+            </div>
+            {% endif %}
+
+            <!-- Side-by-side comparison -->
+            {% if image_filename and enhanced_filename %}
+            <div class="comp-grid">
+                <div class="comp-panel">
+                    <img src="{{ url_for('static', filename='uploads/' + image_filename) }}" alt="Original image">
+                    <span class="comp-label orig">Original</span>
+                </div>
+                <div class="comp-panel">
+                    <img src="{{ url_for('static', filename='enhanced/' + enhanced_filename) }}" alt="Enhanced image">
+                    <span class="comp-label enh">Enhanced</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- RGB Histograms -->
+            {% if result.histogram_original and result.histogram_enhanced %}
+            <div class="metrics-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-bottom:1.5rem">
+                <div class="metric-card" style="padding:1.3rem">
+                    <h4><i class="fas fa-chart-area"></i> Original Color Distribution <span class="tip-btn" tabindex="0" data-tip="Distribution of R/G/B pixels in the unedited image.">?</span></h4>
+                    <div style="height:180px;width:100%;position:relative"><canvas id="histOriginal"></canvas></div>
+                </div>
+                <div class="metric-card" style="padding:1.3rem">
+                    <h4><i class="fas fa-chart-area"></i> Enhanced Color Distribution <span class="tip-btn" tabindex="0" data-tip="Color distribution after AI enhancement.">?</span></h4>
+                    <div style="height:180px;width:100%;position:relative"><canvas id="histEnhanced"></canvas></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quality Metrics -->
+            {% if result.metrics_original and result.metrics_enhanced %}
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4><i class="fas fa-palette"></i> Colorfulness <span class="tip-btn" tabindex="0" data-tip="Hasler & SÃƒ¼sstrunk (2003). Higher = more vibrant colour reproduction.">?</span></h4>
+                    <div class="metric-row"><span class="lbl">Original</span><span class="val orig">{{ result.metrics_original.colorfulness }}</span></div>
+                    <div class="mbar"><div class="mbar-fill" data-width="{{ [result.metrics_original.colorfulness / 1.5, 100] | min }}%"></div></div>
+                    <div class="metric-row"><span class="lbl">Enhanced</span><span class="val enh">{{ result.metrics_enhanced.colorfulness }}</span></div>
+                    <div class="mbar"><div class="mbar-fill" data-width="{{ [result.metrics_enhanced.colorfulness / 1.5, 100] | min }}%"></div></div>
+                </div>
+                <div class="metric-card">
+                    <h4><i class="fas fa-crosshairs"></i> Sharpness <span class="tip-btn" tabindex="0" data-tip="Laplacian variance. Higher = crisper details.">?</span></h4>
+                    <div class="metric-row"><span class="lbl">Original</span><span class="val orig">{{ result.metrics_original.sharpness }}</span></div>
+                    <div class="mbar"><div class="mbar-fill" data-width="{{ [result.metrics_original.sharpness / 30, 100] | min }}%"></div></div>
+                    <div class="metric-row"><span class="lbl">Enhanced</span><span class="val enh">{{ result.metrics_enhanced.sharpness }}</span></div>
+                    <div class="mbar"><div class="mbar-fill" data-width="{{ [result.metrics_enhanced.sharpness / 30, 100] | min }}%"></div></div>
+                </div>
+                <div class="metric-card">
+                    <h4><i class="fas fa-adjust"></i> Contrast <span class="tip-btn" tabindex="0" data-tip="RMS contrast of luminance. Higher = more visual depth.">?</span></h4>
+                    <div class="metric-row"><span class="lbl">Original</span><span class="val orig">{{ result.metrics_original.contrast }}</span></div>
+                    <div class="mbar"><div class="mbar-fill" data-width="{{ [result.metrics_original.contrast / 1.2, 100] | min }}%"></div></div>
+                    <div class="metric-row"><span class="lbl">Enhanced</span><span class="val enh">{{ result.metrics_enhanced.contrast }}</span></div>
+                    <div class="mbar"><div class="mbar-fill" data-width="{{ [result.metrics_enhanced.contrast / 1.2, 100] | min }}%"></div></div>
+                </div>
+                <div class="metric-card">
+                    <h4><i class="fas fa-sun"></i> Brightness <span class="tip-btn" tabindex="0" data-tip="Mean luminance (0-255). Ideal underwater: 80-140.">?</span></h4>
+                    <div class="metric-row"><span class="lbl">Original</span><span class="val orig">{{ result.metrics_original.brightness }}</span></div>
+                    <div class="mbar"><div class="mbar-fill" data-width="{{ [result.metrics_original.brightness / 2.55, 100] | min }}%"></div></div>
+                    <div class="metric-row"><span class="lbl">Enhanced</span><span class="val enh">{{ result.metrics_enhanced.brightness }}</span></div>
+                    <div class="mbar"><div class="mbar-fill" data-width="{{ [result.metrics_enhanced.brightness / 2.55, 100] | min }}%"></div></div>
+                </div>
+                <div class="metric-card underwater">
+                      <h4><i class="fas fa-water" style="color:var(--green)"></i> Entropy <span style="font-size:0.5rem;opacity:0.5;font-weight:400">UNIVERSAL</span> <span class="tip-btn" tabindex="0" data-tip="Shannon Entropy (0-8 bits). Higher = richer information and detail distribution.">?</span></h4>
+                      <div class="metric-row"><span class="lbl">Original</span><span class="val orig">{{ result.metrics_original.entropy }}</span></div>
+                      <div class="mbar"><div class="mbar-fill" data-width="{{ [result.metrics_original.entropy * 12.5, 100] | min }}%"></div></div>
+                      <div class="metric-row"><span class="lbl">Enhanced</span><span class="val enh">{{ result.metrics_enhanced.entropy }}</span></div>
+                      <div class="mbar"><div class="mbar-fill" data-width="{{ [result.metrics_enhanced.entropy * 12.5, 100] | min }}%"></div></div>
+                  </div>
+              </div>
+            </div>
+            {% endif %}
+
+            {% if result.prediction %}
+            <div class="pipeline-card">
+                <h4><i class="fas fa-water"></i> Enhancement Pipeline Applied</h4>
+                <div class="pline-text">
+                    <strong>Degradation:</strong> {{ result.prediction | replace('_', ' ') | title }}<br>
+                    <strong>Stages:</strong> Bilateral Denoise → Red Channel Compensation → Gray World White Balance → CLAHE (LAB) → Dark Channel Prior Dehaze → Multi-Scale Fusion → Proportional LAB Correction → Saturation Recovery → Unsharp Mask → Gamma → Auto-Exposure → Post-Denoise
+                    {% if result.adaptive_boost %}<br><span style="color:var(--amber)"><i class="fas fa-bolt"></i> Adaptive Boost:</span> {{ result.adaptive_boost }}{% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if exif_data %}
+            <div class="exif-card">
+                <h4><i class="fas fa-camera"></i> Image Metadata (EXIF)</h4>
+                <div class="exif-grid">
+                    {% for key, val in exif_data.items() %}
+                    <div class="exif-item"><div class="exif-label">{{ key }}</div><div class="exif-val">{{ val }}</div></div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="btn-row">
+                {% if enhanced_filename %}
+                <form action="{{ url_for('download_image', filename=enhanced_filename) }}" method="GET" class="export-row">
+                    <select name="format" class="export-select">
+                        <option value="jpg">JPG</option>
+                        <option value="png">PNG (Lossless)</option>
+                        <option value="tiff">TIFF (Scientific)</option>
+                    </select>
+                    <button type="submit" class="btn-primary"><i class="fas fa-download"></i> Export</button>
+                </form>
+                {% endif %}
+                {% if depth_filename %}
+                <button type="button" class="btn-primary" id="btn3D" style="background:var(--cyan);color:#000;">
+                    <i class="fas fa-vr-cardboard"></i> View in 3D Space
+                </button>
+                {% endif %}
+                <a href="{{ url_for('prediction') }}" class="btn-outline"><i class="fas fa-plus"></i> New Image</a>
+                <a href="{{ url_for('batch_page') }}" class="btn-ghost"><i class="fas fa-layer-group"></i> Batch</a>
+                <a href="{{ url_for('gallery') }}" class="btn-ghost"><i class="fas fa-images"></i> Gallery</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Ã¢â€¢Ã¢â€¢Ã¢â€¢ ERROR STATE Ã¢â€¢Ã¢â€¢Ã¢â€¢ -->
+        {% if result and 'error' in result %}
+        <div style="text-align:center;padding:4rem 2rem;background:rgba(255,58,92,0.03);border:1px solid rgba(255,58,92,0.15)">
+            <div style="font-size:2.5rem;color:var(--red);margin-bottom:0.8rem"><i class="fas fa-circle-exclamation"></i></div>
+            <p style="color:var(--red);font-size:0.95rem;font-weight:600;font-family:'Space Grotesk',sans-serif">{{ result.error }}</p>
+            <div class="btn-row"><a href="{{ url_for('prediction') }}" class="btn-primary"><i class="fas fa-redo"></i> Try Again</a></div>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="footer-abyssal">
+        <p>MobileNetV2 + Adaptive Multi-Scale Fusion · Ã‚© 2026 AquaVision</p>
+        <a href="{{ url_for('api_docs') }}">API Docs →</a>
+    </footer>
+
+    <script>
+        /* Drag & Drop + Spotlight */
+        var dropZone = document.getElementById('dropZone');
+        var fileInput = document.getElementById('fileInput');
+        var fileName = document.getElementById('fileName');
+        var previewImg = document.getElementById('previewImg');
+        var submitRow = document.getElementById('submitRow');
+
+        if (dropZone) {
+            dropZone.addEventListener('mousemove', function(e) {
+                var r = dropZone.getBoundingClientRect();
+                dropZone.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+                dropZone.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+            });
+            dropZone.addEventListener('mouseleave', function() {
+                dropZone.style.setProperty('--mx', '50%');
+                dropZone.style.setProperty('--my', '50%');
+            });
+            dropZone.addEventListener('click', function() { fileInput.click(); });
+            dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('drag-over'); });
+            dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('drag-over'); });
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault(); dropZone.classList.remove('drag-over');
+                if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; showFile(e.dataTransfer.files[0]); }
+            });
+            fileInput.addEventListener('change', function() { if (fileInput.files.length) showFile(fileInput.files[0]); });
+
+            function showFile(file) {
+                fileName.textContent = file.name + '  (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)';
+                submitRow.style.display = 'block';
+                if (file.type.startsWith('image/')) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) { previewImg.src = e.target.result; previewImg.style.display = 'block'; };
+                    reader.readAsDataURL(file);
+                    fetchPreview(file);
+                }
+            }
+
+            function fetchPreview(file) {
+                var previewBox = document.getElementById('previewResult');
+                var previewEnh = document.getElementById('previewEnhanced');
+                if (!previewBox || !previewEnh) return;
+                previewBox.style.display = 'none';
+                var fd = new FormData();
+                fd.append('file', file);
+                var strengthEl = document.querySelector('input[name="strength"]:checked');
+                if (strengthEl) fd.append('strength', strengthEl.value);
+                var ctrl = new AbortController();
+                var timer = setTimeout(function() { ctrl.abort(); }, 8000);
+                fetch('/api/preview', { method: 'POST', body: fd, signal: ctrl.signal })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        clearTimeout(timer);
+                        if (data.enhanced_image_base64) { previewEnh.src = 'data:image/jpeg;base64,' + data.enhanced_image_base64; previewBox.style.display = 'block'; }
+                    }).catch(function() { clearTimeout(timer); });
+            }
+
+            document.querySelectorAll('input[name="strength"]').forEach(function(el) {
+                el.addEventListener('change', function() { if (fileInput.files.length) fetchPreview(fileInput.files[0]); });
+            });
+        }
+
+        /* Animate bars */
+        document.querySelectorAll('.conf-bar-fill').forEach(function(el) {
+            setTimeout(function() { el.style.width = el.dataset.width; }, 150);
+        });
+        document.querySelectorAll('.mbar-fill').forEach(function(el) {
+            setTimeout(function() { el.style.width = el.dataset.width; }, 300);
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    {% if result.histogram_original and result.histogram_enhanced %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var histOrig = {{ result.histogram_original | tojson | safe }};
+            var histEnh = {{ result.histogram_enhanced | tojson | safe }};
+            var labels = Array.from({length: 256}, function(_, i) { return i; });
+            function createHist(ctxId, data) {
+                var ctx = document.getElementById(ctxId).getContext('2d');
+                return new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: [
+                        { label: 'Red', data: data.r, borderColor: 'rgba(255,99,132,1)', backgroundColor: 'rgba(255,99,132,0.15)', borderWidth: 1, pointRadius: 0, fill: true, tension: 0.2 },
+                        { label: 'Green', data: data.g, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.15)', borderWidth: 1, pointRadius: 0, fill: true, tension: 0.2 },
+                        { label: 'Blue', data: data.b, borderColor: 'rgba(54,162,235,1)', backgroundColor: 'rgba(54,162,235,0.15)', borderWidth: 1, pointRadius: 0, fill: true, tension: 0.2 }
+                    ]},
+                    options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1500, easing: 'easeOutQuart' },
+                        interaction: { mode: 'index', intersect: false },
+                        scales: { x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.35)', maxTicksLimit: 8, font: { family: 'JetBrains Mono', size: 9 } } }, y: { display: false, min: 0 } },
+                        plugins: { legend: { labels: { color: 'rgba(255,255,255,0.6)', boxWidth: 8, usePointStyle: true, font: { size: 10, family: 'Space Grotesk' } }, position: 'top' }, tooltip: { backgroundColor: 'rgba(5,5,5,0.9)', padding: 8, cornerRadius: 2, titleFont: { family: 'Space Grotesk' }, bodyFont: { family: 'JetBrains Mono', size: 11 } } }
+                    }
+                });
+            }
+            createHist('histOriginal', histOrig);
+            createHist('histEnhanced', histEnh);
+        });
+    </script>
+    {% endif %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    {% if image_filename and depth_filename %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var btn3D = document.getElementById('btn3D');
+            var overlay = document.getElementById('webglOverlay');
+            var closeBtn = document.getElementById('webglClose');
+            var container = document.getElementById('webglContainer');
+            if(!btn3D || !overlay || !container || !closeBtn) return;
+
+            var scene, camera, renderer, controls, animationId;
+            var isInitialized = false;
+
+            btn3D.addEventListener('click', function() {
+                overlay.style.display = 'flex';
+                gsap.to(overlay, {opacity: 1, duration: 0.5});
+                if(!isInitialized) init3D();
+            });
+
+            closeBtn.addEventListener('click', function() {
+                gsap.to(overlay, {opacity: 0, duration: 0.5, onComplete: function() {
+                    overlay.style.display = 'none';
+                }});
+            });
+
+            function init3D() {
+                isInitialized = true;
+                
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x050505);
+
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.set(0, 0, 180);
+
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                container.appendChild(renderer.domElement);
+
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+                controls.maxDistance = 500;
+                controls.minDistance = 20;
+
+                var ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+                scene.add(ambientLight);
+                var dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+                dirLight.position.set(0, 50, 100);
+                scene.add(dirLight);
+
+                var textureLoader = new THREE.TextureLoader();
+                var imgUrl = "{{ url_for('static', filename='uploads/' + image_filename) }}";
+                var depthUrl = "{{ url_for('static', filename='enhanced/' + depth_filename) }}";
+
+                var img = new Image();
+                img.onload = function() {
+                    var aspect = img.width / img.height;
+                    var planeWidth = 200;
+                    var planeHeight = 200 / aspect;
+
+                    var geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 256, 256);
+                    
+                    textureLoader.load(imgUrl, function(colorMap) {
+                        textureLoader.load(depthUrl, function(depthMap) {
+                            var material = new THREE.MeshStandardMaterial({
+                                map: colorMap,
+                                displacementMap: depthMap,
+                                displacementScale: 40,
+                                side: THREE.DoubleSide,
+                                roughness: 0.6,
+                                metalness: 0.1
+                            });
+
+                            var mesh = new THREE.Mesh(geometry, material);
+                            geometry.center();
+                            scene.add(mesh);
+                        });
+                    });
+                };
+                img.src = imgUrl;
+
+                window.addEventListener('resize', onWindowResize, false);
+                animate();
+            }
+
+            function onWindowResize() {
+                if(!camera || !renderer) return;
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            function animate() {
+                animationId = requestAnimationFrame(animate);
+                if(controls) controls.update();
+                if(renderer && scene && camera) renderer.render(scene, camera);
+            }
+        });
+    </script>
+    {% endif %}
+    <script src="{{ url_for('static', filename='js/abyssal.js') }}" defer></script>
+    <script>
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/static/sw.js').catch(function(){}); }
+    </script>
+</body>
+</html>

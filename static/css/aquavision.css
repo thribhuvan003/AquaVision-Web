@@ -1,0 +1,442 @@
+/*
+ * ═══════════════════════════════════════════════════════════
+ *  AquaVision v2 — Global Design System  ·  "Abyssal Depth"
+ * ═══════════════════════════════════════════════════════════
+ *
+ * Motion Philosophy: Mesopelagic Zone (200–1000m)
+ *   → Buoyant (float-up entrances)
+ *   → Luminescent (glow pulses, radial light)
+ *   → Fluid (water-resistance easing)
+ *   → Emergent (blur → clarity reveals)
+ *
+ * v2 Additions:
+ *   → Glow-tracking card borders (--gx, --gy)
+ *   → WebGL fluid canvas layer
+ *   → Sonar scanner processing state
+ *   → View Transitions API morphing
+ *   → Metric count-up animations
+ *
+ * Dependencies: None (GSAP optional, degrades gracefully)
+ * Performance: Only transform, opacity, filter animated (GPU)
+ * Accessibility: prefers-reduced-motion fully supported
+ */
+
+
+/* ═══════════════════════════════════════════════════════════
+   1. ACCESSIBILITY & SAFETY
+   ═══════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration:        0.01ms !important;
+        animation-iteration-count: 1      !important;
+        transition-duration:       0.01ms !important;
+        scroll-behavior:           auto   !important;
+    }
+
+    .reveal-blur    { opacity: 1 !important; filter: none !important; transform: none !important; }
+    .text-shimmer   { animation: none !important; }
+    .sonar-line     { display: none !important; }
+}
+
+:focus-visible {
+    outline:        2px solid #06d6f0;
+    outline-offset: 3px;
+    border-radius:  6px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+::selection {
+    background: rgba(6, 214, 240, 0.25);
+    color: #e4f4f8;
+}
+
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #020c16; }
+::-webkit-scrollbar-thumb {
+    background: rgba(6, 214, 240, 0.18);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(6, 214, 240, 0.35); }
+
+@media print {
+    .ocean-bg, .bubbles, nav, #fluidBg,
+    .processing-overlay, footer { display: none !important; }
+    body   { background: #fff; color: #000; }
+    .glass { background: #fff; backdrop-filter: none; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   2. WEBGL FLUID CANVAS LAYER
+   ═══════════════════════════════════════════════════════════ */
+
+#fluidBg {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 1;
+}
+
+
+/* Image loading — scoped to content areas only (not icons/decoratives) */
+.page img,
+.hero img,
+.result-section img,
+.comp-panel img,
+main img {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+.page img.loaded,
+.hero img.loaded,
+.result-section img.loaded,
+.comp-panel img.loaded,
+main img.loaded { opacity: 1; }
+
+/* Safety: if JS fails, images appear after 3s */
+.page img:not(.loaded),
+.comp-panel img:not(.loaded) {
+    animation: img-safety-show 0s 3s forwards;
+}
+@keyframes img-safety-show { to { opacity: 1; } }
+
+
+/* ═══════════════════════════════════════════════════════════
+   4. GLASSMORPHISM SURFACES
+   ═══════════════════════════════════════════════════════════ */
+
+.glass {
+    background: rgba(4, 21, 37, 0.55);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(6, 214, 240, 0.10);
+}
+
+.glass-glow {
+    background: rgba(4, 21, 37, 0.50);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(6, 214, 240, 0.12);
+    box-shadow:
+        0 0 24px rgba(6, 214, 240, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    transition: border-color 0.4s, box-shadow 0.4s;
+}
+.glass-glow:hover {
+    border-color: rgba(6, 214, 240, 0.25);
+    box-shadow:
+        0 0 40px rgba(6, 214, 240, 0.08),
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   5. GLOW-TRACKING BORDERS
+   Cards glow relative to cursor position via --gx, --gy.
+   ═══════════════════════════════════════════════════════════ */
+
+.bento-card,
+.pipeline-step,
+.deg-card,
+.stat-card,
+.metric-card,
+.info-card {
+    --gx: 50%;
+    --gy: 50%;
+    position: relative;
+}
+
+.bento-card::after,
+.pipeline-step::after,
+.stat-card::after,
+.metric-card::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: radial-gradient(
+        300px circle at var(--gx) var(--gy),
+        rgba(6, 214, 240, 0.15),
+        transparent 60%
+    );
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.bento-card:hover::after,
+.pipeline-step:hover::after,
+.stat-card:hover::after,
+.metric-card:hover::after {
+    opacity: 1;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   6. REVEAL SYSTEM (GSAP ScrollTrigger targets)
+   ═══════════════════════════════════════════════════════════ */
+
+.reveal-blur {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(40px);
+    will-change: transform, opacity, filter;
+}
+
+.reveal-blur.revealed {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+    transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1),
+                filter 0.7s cubic-bezier(0.22,1,0.36,1),
+                transform 0.7s cubic-bezier(0.22,1,0.36,1);
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   7. TEXT EFFECTS
+   ═══════════════════════════════════════════════════════════ */
+
+.text-shimmer {
+    background: linear-gradient(
+        105deg,
+        #e4f4f8  0%,
+        #06d6f0 20%,
+        #818cf8 40%,
+        #e4f4f8 60%,
+        #06d6f0 80%,
+        #e4f4f8 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: text-shimmer-sweep 6s ease-in-out infinite;
+}
+@keyframes text-shimmer-sweep {
+    0%   { background-position: 100% 50%; }
+    50%  { background-position: 0%   50%; }
+    100% { background-position: 100% 50%; }
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, #06d6f0 0%, #38bdf8 50%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   8. ANIMATION UTILITIES
+   ═══════════════════════════════════════════════════════════ */
+
+.float {
+    animation: gentle-float 6s ease-in-out infinite;
+}
+.float-slow {
+    animation: gentle-float 10s ease-in-out infinite;
+}
+@keyframes gentle-float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-14px); }
+}
+
+.glow-pulse {
+    animation: border-glow-pulse 3s ease-in-out infinite;
+}
+@keyframes border-glow-pulse {
+    0%, 100% { border-color: rgba(6, 214, 240, 0.10); box-shadow: 0 0 0 rgba(6,214,240,0); }
+    50%      { border-color: rgba(6, 214, 240, 0.30); box-shadow: 0 0 20px rgba(6,214,240,0.06); }
+}
+
+.page-enter {
+    animation: page-emerge 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes page-emerge {
+    from { opacity: 0; transform: translateY(20px); filter: blur(6px); }
+    to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+
+.magnetic-btn {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
+.btn-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+.btn-shimmer::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(
+        105deg,
+        transparent 30%,
+        rgba(255,255,255,0.25) 50%,
+        transparent 70%
+    );
+    transform: translateX(-150%);
+    transition: transform 0s;
+}
+.btn-shimmer:hover::after {
+    transform: translateX(150%);
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   9. SONAR SCANNER PROCESSING STATE
+   ═══════════════════════════════════════════════════════════ */
+
+.sonar-wrap {
+    position: relative;
+    width: 400px;
+    max-width: 90vw;
+    margin: 0 auto;
+}
+
+.sonar-canvas {
+    width: 100%;
+    height: auto;
+    border-radius: 16px;
+    border: 1px solid rgba(6, 214, 240, 0.2);
+    display: none;
+    background: rgba(2, 12, 22, 0.9);
+}
+
+.sonar-line {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(6, 214, 240, 0.3) 20%,
+        rgba(6, 214, 240, 0.9) 50%,
+        rgba(6, 214, 240, 0.3) 80%,
+        transparent 100%
+    );
+    box-shadow:
+        0 0 15px rgba(6, 214, 240, 0.6),
+        0 0 40px rgba(6, 214, 240, 0.3),
+        0 0 80px rgba(6, 214, 240, 0.1);
+    display: none;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.terminal-text {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(6, 214, 240, 0.7);
+    letter-spacing: 0.04em;
+    text-align: center;
+    margin-top: 1.2rem;
+    min-height: 1.2em;
+    animation: terminal-blink 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes terminal-blink {
+    0%   { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Processing overlay v2 */
+.processing-overlay .proc-title {
+    font-family: 'Syne', 'Inter Tight', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #e4f4f8 40%, #06d6f0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.processing-overlay .proc-sub {
+    font-size: 0.85rem;
+    color: rgba(122, 181, 199, 0.6);
+    max-width: 380px;
+    text-align: center;
+    line-height: 1.55;
+}
+
+/* Spinner v2 — concentric rings */
+.spinner-v2 {
+    width: 64px;
+    height: 64px;
+    position: relative;
+}
+
+.spinner-v2 .ring {
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    border-radius: 50%;
+}
+
+.spinner-v2 .ring:nth-child(1) {
+    border-top-color: #06d6f0;
+    animation: spin 0.8s linear infinite;
+}
+
+.spinner-v2 .ring:nth-child(2) {
+    inset: 4px;
+    border-right-color: rgba(129, 140, 248, 0.6);
+    animation: spin 1.2s linear infinite reverse;
+}
+
+.spinner-v2 .ring:nth-child(3) {
+    inset: 8px;
+    border-bottom-color: rgba(6, 214, 240, 0.3);
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   10. VIEW TRANSITIONS API
+   ═══════════════════════════════════════════════════════════ */
+
+::view-transition-old(root) {
+    animation: vt-fade-out 0.2s ease-in forwards;
+}
+
+::view-transition-new(root) {
+    animation: vt-fade-in 0.35s ease-out both;
+    animation-delay: 0.1s;
+}
+
+@keyframes vt-fade-out {
+    from { opacity: 1; transform: translateY(0); filter: blur(0); }
+    to   { opacity: 0; transform: translateY(-8px); filter: blur(4px); }
+}
+
+@keyframes vt-fade-in {
+    from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+    to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   11. METRIC COUNT-UP ANIMATION CLASS
+   ═══════════════════════════════════════════════════════════ */
+
+.metric-count-up {
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+}

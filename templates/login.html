@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <title>Sign In — AquaVision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* Grid background */
+        .auth-grid {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 0;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(255,255,255,0.015) 60px),
+                repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(255,255,255,0.01) 60px);
+        }
+
+        /* Back link */
+        .back-link {
+            position: fixed; top: 1.5rem; left: 1.5rem; z-index: 10;
+            color: var(--gray-2); text-decoration: none; font-size: 0.78rem;
+            font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 0.4rem;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--cyan); }
+
+        /* Auth card — sharp, no glassmorphism */
+        .auth-card {
+            position: relative; z-index: 1;
+            width: 100%; max-width: 420px; margin: 2rem;
+            background: var(--black-1);
+            border: var(--b1);
+            padding: 3rem 2.5rem;
+            animation: card-enter 0.5s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        @keyframes card-enter {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Logo */
+        .auth-logo { text-align: center; margin-bottom: 2.5rem; }
+        .auth-logo-mark {
+            width: 48px; height: 48px;
+            border: var(--b2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; color: var(--cyan);
+            margin: 0 auto 1rem;
+        }
+        .auth-logo-text {
+            font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800;
+            color: var(--white); letter-spacing: -0.03em;
+        }
+        .auth-logo p { font-size: 0.82rem; color: var(--gray-2); margin-top: 0.3rem; }
+
+        /* Form */
+        .form-group { margin-bottom: 1.2rem; }
+        .form-label {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem; font-weight: 700;
+            color: var(--gray-1); text-transform: uppercase; letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+        .input-wrap { position: relative; }
+        .input-icon {
+            position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+            color: var(--gray-2); font-size: 0.82rem; pointer-events: none;
+            transition: color 0.2s;
+        }
+        .input-wrap:focus-within .input-icon { color: var(--cyan); }
+        .form-input {
+            width: 100%;
+            padding: 0.9rem 1rem 0.9rem 2.8rem;
+            background: rgba(255,255,255,0.025);
+            border: var(--b1);
+            border-radius: 2px; color: var(--white);
+            font-family: 'Space Grotesk', sans-serif; font-size: 0.92rem;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .form-input:focus {
+            border-color: rgba(6,214,240,0.4);
+            background: rgba(6,214,240,0.02);
+        }
+        .form-input::placeholder { color: var(--gray-3); }
+        
+        /* Eye Button */
+        .eye-btn {
+            position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: var(--gray-2);
+            cursor: pointer; padding: 0.2rem; font-size: 0.9rem;
+            transition: color 0.2s; outline: none; z-index: 2;
+        }
+        .eye-btn:hover, .eye-btn:focus-visible { color: var(--cyan); }
+        /* Submit button */
+        .btn-submit {
+            width: 100%; padding: 0.95rem;
+            margin-top: 0.5rem;
+            background: var(--cyan);
+            color: #000;
+            font-family: 'Space Grotesk', sans-serif; font-size: 0.9rem; font-weight: 700;
+            letter-spacing: 0.05em; text-transform: uppercase;
+            border: none; border-radius: 2px; cursor: pointer;
+            position: relative; overflow: hidden;
+            transition: transform 0.15s;
+        }
+        .btn-submit::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.28) 50%, transparent 70%);
+            transform: translateX(-120%); transition: transform 0s;
+        }
+        .btn-submit:hover { transform: translateY(-2px); }
+        .btn-submit:hover::after { transform: translateX(120%); transition: transform 0.5s ease; }
+        .btn-submit:active { transform: translateY(0); }
+
+        /* Messages */
+        .msg {
+            padding: 0.75rem 1rem; font-size: 0.82rem; font-weight: 600;
+            margin-bottom: 1.2rem; border-left: 2px solid;
+        }
+        .msg.error   { border-color: var(--red); color: var(--red); background: rgba(255,58,92,0.05); }
+        .msg.success { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.05); }
+
+        /* Footer */
+        .auth-footer {
+            text-align: center; margin-top: 1.5rem;
+            font-size: 0.82rem; color: var(--gray-2);
+        }
+        .auth-footer a {
+            color: var(--cyan); text-decoration: none; font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .auth-footer a:hover { opacity: 0.75; }
+
+        /* Divider */
+        .divider {
+            display: flex; align-items: center; gap: 0.8rem;
+            margin: 1.2rem 0 0.3rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem; color: var(--gray-3);
+        }
+        .divider::before, .divider::after {
+            content: ''; flex: 1; height: 1px; background: var(--black-3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-grid" aria-hidden="true"></div>
+
+    <a href="{{ url_for('index') }}" class="back-link">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+    </a>
+
+    <div class="auth-card" role="main">
+        <div class="auth-logo">
+            <div class="auth-logo-mark" aria-hidden="true"><i class="fas fa-water"></i></div>
+            <div class="auth-logo-text">AquaVision</div>
+            <p>Sign in to your account</p>
+        </div>
+
+        {% if message %}
+        <div class="msg {% if 'exist' in message or 'Invalid' in message or 'not' in message %}error{% else %}success{% endif %}"
+             role="alert">{{ message }}</div>
+        {% endif %}
+
+        <form method="POST" novalidate>
+            <div class="form-group">
+                <label class="form-label" for="email">Email Address</label>
+                <div class="input-wrap">
+                    <input class="form-input" type="email" name="email" id="email"
+                           placeholder="you@example.com" required autocomplete="email">
+                    <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <div class="input-wrap">
+                    <input class="form-input" style="padding-right: 2.8rem;" type="password" name="password" id="password"
+                           placeholder="Your password" required autocomplete="current-password">
+                    <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
+                    <button type="button" class="eye-btn" onclick="togglePassword(this, 'password')" aria-label="Toggle password visibility">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>&nbsp; Sign In
+            </button>
+        </form>
+
+        <div class="divider">or</div>
+        <div class="auth-footer">
+            Don't have an account? <a href="{{ url_for('register') }}">Create one</a>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/abyssal.js') }}" defer></script>
+    <script>
+        function togglePassword(btn, inputId) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').catch(function(){});
+        }
+    </script>
+</body>
+</html>

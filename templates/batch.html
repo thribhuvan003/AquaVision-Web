@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <meta name="description" content="Process up to 10 underwater images simultaneously with AquaVision's batch enhancement engine.">
+    <link rel="manifest" href="/static/manifest.json">
+    <title>Batch Enhance — AquaVision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+
+    <style>
+        .page-main {
+            position: relative; z-index: 1;
+            max-width: 960px; margin: 0 auto;
+            padding: 100px 5% 6rem;
+        }
+
+        /* — Header — */
+        .ph-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem; font-weight: 700;
+            color: var(--cyan); text-transform: uppercase; letter-spacing: 0.14em;
+            display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem;
+        }
+        .ph-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--cyan); }
+        .ph-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800;
+            letter-spacing: -0.04em; color: var(--white);
+            margin-bottom: 0.5rem; line-height: 1;
+        }
+        .ph-sub { font-size: 0.88rem; color: var(--gray-1); margin-bottom: 2.5rem; line-height: 1.6; }
+
+        /* — Drop zone — */
+        .batch-zone {
+            border: 1px dashed rgba(6,214,240,0.25);
+            padding: 3.5rem; text-align: center; cursor: pointer;
+            transition: border-color 0.25s, background 0.25s;
+            background: rgba(6,214,240,0.02);
+            position: relative; overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        .batch-zone:hover, .batch-zone.drag-over {
+            border-color: var(--cyan);
+            background: rgba(6,214,240,0.05);
+        }
+        .batch-zone .zi {
+            font-size: 2rem; color: var(--cyan);
+            margin-bottom: 0.8rem; display: block;
+        }
+        .batch-zone h2 {
+            font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800;
+            color: var(--white); margin-bottom: 0.4rem; letter-spacing: -0.02em;
+        }
+        .batch-zone p { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--gray-2); }
+
+        /* — File list — */
+        .file-list { margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
+        .file-item {
+            display: flex; align-items: center; gap: 0.8rem;
+            padding: 0.7rem 1rem;
+            background: var(--black-1); border: var(--b1);
+            font-size: 0.85rem;
+            animation: fade-up 0.3s ease both;
+        }
+        @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        .file-item .fname { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--off-white); }
+        .file-item .fsize {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--gray-2);
+        }
+        .file-item .fstatus {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; font-weight: 700;
+            padding: 0.15rem 0.55rem; border: 1px solid currentColor; min-width: 78px; text-align: center;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .fstatus.pending    { color: var(--gray-2); border-color: rgba(255,255,255,0.08); }
+        .fstatus.processing { color: var(--amber); border-color: rgba(255,184,0,0.3); }
+        .fstatus.done       { color: var(--green); border-color: rgba(0,255,136,0.3); }
+        .fstatus.error, .fstatus.skipped { color: var(--red); border-color: rgba(255,58,92,0.3); }
+        .remove-btn {
+            background: none; border: none; color: var(--red);
+            cursor: pointer; opacity: 0.45; transition: opacity 0.2s; font-size: 0.8rem; padding: 0;
+        }
+        .remove-btn:hover { opacity: 1; }
+
+        /* — Controls bar — */
+        .controls-bar {
+            display: flex; align-items: center; gap: 1rem;
+            flex-wrap: wrap; margin-bottom: 1.5rem;
+        }
+        .str-grp { display: flex; gap: 0.4rem; }
+        .str-grp input { display: none; }
+        .str-opt {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.42rem 0.9rem;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; font-weight: 700;
+            letter-spacing: 0.04em; text-transform: uppercase;
+            border: var(--b1); color: var(--gray-2); cursor: pointer;
+            transition: all 0.2s; background: transparent;
+        }
+        .str-grp input:checked + .str-opt {
+            border-color: rgba(6,214,240,0.35); color: var(--cyan);
+            background: rgba(6,214,240,0.05);
+        }
+        .str-opt:hover { color: var(--off-white); border-color: rgba(255,255,255,0.14); }
+
+        /* — Progress — */
+        .progress-wrap { margin-top: 1rem; display: none; }
+        .bar-track { width: 100%; height: 2px; background: var(--black-3); overflow: hidden; }
+        .bar-fill {
+            height: 100%; background: var(--cyan);
+            width: 0%; transition: width 0.4s ease;
+        }
+        .progress-text {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+            color: var(--gray-1); margin-top: 0.5rem; text-align: center; letter-spacing: 0.04em;
+        }
+
+        /* — Results grid — */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1px; background: rgba(255,255,255,0.04);
+            margin-top: 2.5rem;
+        }
+        .result-card {
+            background: var(--black); overflow: hidden;
+            animation: fade-up 0.4s ease both;
+        }
+        .result-pair { display: grid; grid-template-columns: 1fr 1fr; position: relative; }
+        .result-pair img { width: 100%; height: 130px; object-fit: cover; display: block; }
+        .pair-divider {
+            position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+            background: var(--cyan); z-index: 2; opacity: 0.5;
+        }
+        .pair-labels {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            display: flex; justify-content: space-between; padding: 0.3rem 0.5rem;
+            pointer-events: none;
+        }
+        .pair-label {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; font-weight: 700;
+            color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.06em;
+            background: rgba(0,0,0,0.55); padding: 0.1rem 0.4rem;
+        }
+        .result-info {
+            padding: 0.75rem 1rem; border-top: var(--b0);
+            font-size: 0.8rem;
+        }
+        .rfname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--off-white); margin-bottom: 0.25rem; }
+        .rpred {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.66rem;
+            color: var(--cyan); display: flex; align-items: center; gap: 0.35rem;
+        }
+        .skip-info { padding: 1.5rem 1rem; text-align: center; }
+        .sfname { font-size: 0.82rem; color: var(--off-white); margin-bottom: 0.4rem; overflow: hidden; text-overflow: ellipsis; }
+        .sreason { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--red); }
+
+        @media (max-width: 640px) { .controls-bar { flex-direction: column; align-items: flex-start; } }
+    </style>
+</head>
+<body>
+
+
+    <nav class="nav-abyssal" role="navigation" aria-label="Main navigation">
+        <a href="{{ url_for('home') }}" class="nav-logo">
+            AquaVision <span class="nav-logo-dot" aria-hidden="true"></span>
+        </a>
+        <ul class="nav-links-abyssal" role="list">
+            <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('prediction') }}">Enhance</a></li>
+            <li><a href="{{ url_for('video_prediction') }}">Video</a></li>
+            <li><a href="{{ url_for('batch_page') }}" class="active">Batch</a></li>
+            <li><a href="{{ url_for('my_videos') }}">My Videos</a></li>
+            <li><a href="{{ url_for('gallery') }}">Gallery</a></li>
+            <li><a href="{{ url_for('about') }}">About</a></li>
+            <li><a href="{{ url_for('api_docs') }}">API</a></li>
+            <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
+        </ul>
+    </nav>
+
+    <main class="page-main" id="main-content">
+        <div class="ph-eyebrow reveal">Batch Processing</div>
+        <h1 class="ph-title reveal">Enhance Multiple Images</h1>
+        <p class="ph-sub reveal">Upload up to 10 underwater images at once — each gets classified and enhanced individually.</p>
+
+        <!-- Drop Zone -->
+        <div class="batch-zone reveal" id="batchZone" role="button" tabindex="0"
+             aria-label="Drop zone: click or drag images here">
+            <span class="zi" aria-hidden="true"><i class="fas fa-layer-group"></i></span>
+            <h2>Drop images here</h2>
+            <p>or click to browse &middot; JPEG PNG BMP &middot; up to 10 files</p>
+        </div>
+        <input type="file" id="batchInput" accept="image/*" multiple style="display:none"
+               aria-label="File input for batch images">
+
+        <!-- File List -->
+        <div class="file-list" id="fileList" aria-live="polite" aria-label="Selected files"></div>
+
+        <!-- Controls -->
+        <div class="controls-bar" id="batchControls" style="display:none">
+            <div class="str-grp" role="radiogroup" aria-label="Enhancement strength">
+                <label><input type="radio" name="strength" value="mild">
+                    <span class="str-opt"><i class="fas fa-feather" aria-hidden="true"></i> Mild</span></label>
+                <label><input type="radio" name="strength" value="standard" checked>
+                    <span class="str-opt"><i class="fas fa-sliders" aria-hidden="true"></i> Standard</span></label>
+                <label><input type="radio" name="strength" value="strong">
+                    <span class="str-opt"><i class="fas fa-bolt" aria-hidden="true"></i> Strong</span></label>
+            </div>
+            <button id="batchBtn" class="btn-primary" onclick="startBatch()">
+                <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Enhance All
+            </button>
+            <button id="downloadZipBtn" class="btn-outline" onclick="downloadZip()"
+                    style="display:none" aria-label="Download all results as ZIP">
+                <i class="fas fa-file-zipper" aria-hidden="true"></i> Download ZIP
+            </button>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-wrap" id="progressWrap" role="status" aria-live="polite">
+            <div class="bar-track"><div class="bar-fill" id="progressFill"></div></div>
+            <div class="progress-text" id="progressText">Processing...</div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-grid" id="resultsGrid" role="region" aria-label="Enhancement results"></div>
+    </main>
+
+    <footer class="footer-abyssal" role="contentinfo">
+        <p>MobileNetV2 + Adaptive Multi-Scale Fusion &middot; &copy; 2026 AquaVision</p>
+        <a href="{{ url_for('api_docs') }}">API Docs →</a>
+    </footer>
+
+    <script>
+    const batchZone  = document.getElementById('batchZone');
+    const batchInput = document.getElementById('batchInput');
+    const fileList   = document.getElementById('fileList');
+    const controls  = document.getElementById('batchControls');
+    let selectedFiles = [];
+
+    batchZone.addEventListener('click', () => batchInput.click());
+    batchZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') batchInput.click(); });
+    batchZone.addEventListener('dragover', e => { e.preventDefault(); batchZone.classList.add('drag-over'); });
+    batchZone.addEventListener('dragleave', () => batchZone.classList.remove('drag-over'));
+    batchZone.addEventListener('drop', e => {
+        e.preventDefault(); batchZone.classList.remove('drag-over');
+        addFiles(Array.from(e.dataTransfer.files));
+    });
+    batchInput.addEventListener('change', () => addFiles(Array.from(batchInput.files)));
+
+    function addFiles(files) {
+        const imgs = files.filter(f => f.type.startsWith('image/'));
+        selectedFiles = selectedFiles.concat(imgs).slice(0, 10);
+        renderFileList();
+        controls.style.display = selectedFiles.length > 0 ? 'flex' : 'none';
+    }
+
+    function removeFile(idx) {
+        selectedFiles.splice(idx, 1);
+        renderFileList();
+        controls.style.display = selectedFiles.length > 0 ? 'flex' : 'none';
+    }
+
+    function renderFileList() {
+        fileList.innerHTML = selectedFiles.map((f, i) => `
+            <div class="file-item" id="file-${i}">
+                <i class="fas fa-image" style="color:var(--cyan);font-size:0.9rem" aria-hidden="true"></i>
+                <span class="fname">${escHtml(f.name)}</span>
+                <span class="fsize">${(f.size/1024/1024).toFixed(1)} MB</span>
+                <span class="fstatus pending" id="status-${i}" role="status">Pending</span>
+                <button class="remove-btn" onclick="removeFile(${i})"
+                        aria-label="Remove ${escHtml(f.name)}">
+                    <i class="fas fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>`).join('');
+    }
+
+    function escHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function startBatch() {
+        if (selectedFiles.length === 0) return;
+        const btn = document.getElementById('batchBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Processing…';
+        document.querySelectorAll('.remove-btn').forEach(b => b.style.display = 'none');
+
+        const progressWrap = document.getElementById('progressWrap');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const resultsGrid  = document.getElementById('resultsGrid');
+        progressWrap.style.display = 'block';
+        resultsGrid.innerHTML = '';
+
+        selectedFiles.forEach((_, i) => {
+            const s = document.getElementById('status-' + i);
+            if (s) { s.className = 'fstatus processing'; s.textContent = 'Processing'; }
+        });
+
+        const strength = document.querySelector('input[name="strength"]:checked').value;
+        const fd = new FormData();
+        selectedFiles.forEach(f => fd.append('files', f));
+        fd.append('strength', strength);
+
+        progressFill.style.width = '25%';
+        progressText.textContent = `Enhancing ${selectedFiles.length} image${selectedFiles.length > 1 ? 's' : ''}…`;
+
+        fetch('/batch_enhance', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(data => {
+                progressFill.style.width = '100%';
+                progressText.textContent = `Complete — ${data.count} image${data.count !== 1 ? 's' : ''} processed`;
+
+                if (data.results) {
+                    data.results.forEach((r, i) => {
+                        const s = document.getElementById('status-' + i);
+                        if (r.status === 'success') {
+                            if (s) { s.className = 'fstatus done'; s.textContent = 'Done'; }
+                            resultsGrid.innerHTML += `
+                                <div class="result-card">
+                                    <div class="result-pair">
+                                        <img src="${r.original_url}" alt="Original image">
+                                        <img src="${r.enhanced_url}" alt="Enhanced image">
+                                        <div class="pair-divider" aria-hidden="true"></div>
+                                        <div class="pair-labels" aria-hidden="true">
+                                            <span class="pair-label">Orig</span>
+                                            <span class="pair-label">Enh</span>
+                                        </div>
+                                    </div>
+                                    <div class="result-info">
+                                        <div class="rfname">${escHtml(r.filename)}</div>
+                                        <div class="rpred">
+                                            <i class="fas fa-tag" aria-hidden="true"></i>
+                                            ${escHtml(r.prediction)} · ${r.confidence}%
+                                        </div>
+                                    </div>
+                                </div>`;
+                        } else {
+                            if (s) { s.className = 'fstatus error'; s.textContent = r.status === 'skipped' ? 'Skipped' : 'Error'; }
+                            resultsGrid.innerHTML += `
+                                <div class="result-card">
+                                    <div class="skip-info">
+                                        <div class="sfname">${escHtml(r.filename)}</div>
+                                        <div class="sreason">
+                                            <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+                                            ${escHtml(r.reason || 'Unknown error')}
+                                        </div>
+                                    </div>
+                                </div>`;
+                        }
+                    });
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Enhance All';
+                if (data.results && data.results.some(r => r.status === 'success')) {
+                    document.getElementById('downloadZipBtn').style.display = 'inline-flex';
+                }
+            })
+            .catch(err => {
+                progressText.textContent = 'Error: ' + err.message;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Enhance All';
+            });
+    }
+
+    function downloadZip() {
+        const btn = document.getElementById('downloadZipBtn');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Zipping…';
+        btn.disabled = true;
+        const urls = Array.from(document.querySelectorAll('.result-card .result-pair img:nth-child(2)')).map(img => img.src);
+        if (!urls.length) { btn.innerHTML = orig; btn.disabled = false; return; }
+        fetch('/api/v1/download_zip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ files: urls })
+        }).then(r => r.blob()).then(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'AquaVision_Batch.zip';
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+            btn.innerHTML = orig; btn.disabled = false;
+        }).catch(err => {
+            alert('ZIP error: ' + err.message);
+            btn.innerHTML = orig; btn.disabled = false;
+        });
+    }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="{{ url_for('static', filename='js/abyssal.js') }}" defer></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').catch(function(){});
+        }
+    </script>
+</body>
+</html>
+

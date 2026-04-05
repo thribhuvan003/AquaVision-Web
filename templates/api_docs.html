@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <meta name="description" content="AquaVision REST API documentation — integrate underwater image enhancement into your own applications.">
+    <link rel="manifest" href="/static/manifest.json">
+    <title>API Documentation — AquaVision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+    <style>
+        .page-main {
+            position: relative; z-index: 1;
+            max-width: 860px; margin: 0 auto;
+            padding: 100px 5% 6rem;
+        }
+
+        .ph-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem; font-weight: 700;
+            color: var(--cyan); text-transform: uppercase; letter-spacing: 0.14em;
+            display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem;
+        }
+        .ph-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--cyan); }
+        .ph-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800;
+            letter-spacing: -0.04em; color: var(--white);
+            margin-bottom: 0.5rem; line-height: 1;
+        }
+        .ph-sub { font-size: 0.88rem; color: var(--gray-1); margin-bottom: 2.5rem; line-height: 1.6; }
+        .ph-sub a { color: var(--cyan); text-decoration: none; }
+        .ph-sub a:hover { text-decoration: underline; }
+
+        /* — Endpoint block — */
+        .endpoint {
+            background: var(--black-1); border: var(--b1);
+            padding: 1.8rem; margin-bottom: 1.5rem;
+        }
+        .endpoint-hdr { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .method {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem; font-weight: 700;
+            padding: 0.2rem 0.6rem; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .method.post { background: rgba(0,255,136,0.08); color: var(--green); border: 1px solid rgba(0,255,136,0.2); }
+        .method.get  { background: rgba(6,214,240,0.08); color: var(--cyan);  border: var(--b2); }
+        .ep-path {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--white); font-weight: 600;
+        }
+        .ep-desc { font-size: 0.85rem; color: var(--gray-1); line-height: 1.65; margin-bottom: 1.2rem; }
+
+        /* — Section label — */
+        .sec-label {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 700;
+            color: var(--cyan); text-transform: uppercase; letter-spacing: 0.1em;
+            display: flex; align-items: center; gap: 0.4rem;
+            margin: 1.2rem 0 0.6rem;
+        }
+
+        /* — Code blocks — */
+        .code-block {
+            background: var(--black); border: var(--b0);
+            padding: 1rem 1.2rem; overflow-x: auto;
+            margin-bottom: 1rem; position: relative;
+        }
+        .code-block code {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.76rem;
+            color: var(--gray-1); line-height: 1.75; white-space: pre;
+        }
+        .code-block code .kw { color: var(--cyan); }
+        .code-block code .str { color: var(--green); }
+        .copy-btn {
+            position: absolute; top: 0.6rem; right: 0.6rem;
+            background: rgba(255,255,255,0.04); border: var(--b0);
+            color: var(--gray-2); cursor: pointer;
+            padding: 0.25rem 0.65rem; font-size: 0.62rem;
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            letter-spacing: 0.06em; text-transform: uppercase;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .copy-btn:hover { color: var(--cyan); border-color: rgba(6,214,240,0.25); }
+
+        /* — Param table — */
+        .param-table { width: 100%; border-collapse: collapse; margin-bottom: 0.5rem; font-size: 0.82rem; }
+        .param-table th {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 700;
+            color: var(--gray-1); text-transform: uppercase; letter-spacing: 0.08em;
+            text-align: left; padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .param-table td {
+            padding: 0.55rem 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.035);
+            color: var(--gray-1); vertical-align: top;
+        }
+        .param-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--off-white); font-size: 0.78rem; }
+        .p-req { font-size: 0.58rem; font-weight: 700; color: var(--red); margin-left: 0.3em; text-transform: uppercase; }
+        .p-opt { font-size: 0.58rem; color: var(--gray-2); margin-left: 0.3em; }
+
+        /* — Try-it section — */
+        .try-panel {
+            background: var(--black-2); border: var(--b2);
+            padding: 1.5rem; margin-top: 1.5rem;
+        }
+        .try-title {
+            font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 800;
+            color: var(--cyan); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .try-form { display: flex; flex-direction: column; gap: 0.75rem; }
+        .try-input {
+            padding: 0.65rem 0.9rem;
+            background: rgba(255,255,255,0.025); border: var(--b1);
+            border-radius: 2px; color: var(--white);
+            font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        .try-input:focus { border-color: rgba(6,214,240,0.4); }
+        .try-input::placeholder { color: var(--gray-3); }
+        .try-select {
+            padding: 0.65rem 0.9rem;
+            background: rgba(255,255,255,0.025); border: var(--b1);
+            border-radius: 2px; color: var(--white);
+            font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+            outline: none; cursor: pointer;
+        }
+        .try-result { margin-top: 1rem; display: none; }
+        .try-result img { max-width: 280px; display: block; margin-bottom: 0.8rem; }
+        .try-result pre {
+            background: var(--black); border: var(--b0);
+            padding: 1rem; overflow-x: auto; overflow-y: auto; max-height: 280px;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--gray-1); line-height: 1.65;
+        }
+    </style>
+</head>
+<body>
+
+
+    <nav class="nav-abyssal" role="navigation" aria-label="Main navigation">
+        <a href="{{ url_for('home') }}" class="nav-logo">
+            AquaVision <span class="nav-logo-dot" aria-hidden="true"></span>
+        </a>
+        <ul class="nav-links-abyssal" role="list">
+            <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('prediction') }}">Enhance</a></li>
+            <li><a href="{{ url_for('batch_page') }}">Batch</a></li>
+            <li><a href="{{ url_for('api_dashboard') }}">API Keys</a></li>
+            <li><a href="{{ url_for('api_docs') }}" class="active">Docs</a></li>
+            <li><a href="{{ url_for('about') }}">About</a></li>
+            <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
+        </ul>
+    </nav>
+
+    <main class="page-main" id="main-content">
+        <div class="ph-eyebrow reveal">Developer</div>
+        <h1 class="ph-title reveal">REST API &amp; Integrations</h1>
+        <p class="ph-sub reveal">
+            Integrate AquaVision's underwater enhancement pipeline into your own applications.
+            Create an access token in the <a href="{{ url_for('api_dashboard') }}">API Keys Dashboard</a>.
+        </p>
+
+        <!-- Endpoint 1: /api/v1/enhance -->
+        <div class="endpoint reveal" style="animation-delay:0.05s">
+            <div class="endpoint-hdr">
+                <span class="method post">POST</span>
+                <span class="ep-path">/api/v1/enhance</span>
+            </div>
+            <p class="ep-desc">
+                Enhance a single underwater image. Returns classification, quality metrics, improvement percentage,
+                and the enhanced image as a base64-encoded JPEG.
+            </p>
+
+            <div class="sec-label"><i class="fas fa-arrow-right-to-bracket" aria-hidden="true"></i> Headers &amp; Parameters</div>
+            <table class="param-table" aria-label="Endpoint parameters">
+                <thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>Authorization <span class="p-req">header</span></td><td>String</td><td><code>Bearer &lt;your_api_key&gt;</code></td></tr>
+                    <tr><td>file <span class="p-req">required</span></td><td>File</td><td>Image file (JPEG, PNG, BMP, TIFF)</td></tr>
+                    <tr><td>strength <span class="p-opt">optional</span></td><td>String</td><td><code>mild</code> | <code>standard</code> (default) | <code>strong</code></td></tr>
+                    <tr><td>format <span class="p-opt">optional</span></td><td>String</td><td><code>jpeg</code> (default) | <code>png</code> | <code>tiff</code></td></tr>
+                </tbody>
+            </table>
+
+            <div class="sec-label"><i class="fas fa-terminal" aria-hidden="true"></i> cURL</div>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy cURL example">Copy</button>
+                <code>curl -X POST http://localhost:5000/api/v1/enhance \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F "file=@underwater_photo.jpg" \
+  -F "strength=standard" \
+  -F "format=jpeg"</code>
+            </div>
+
+            <div class="sec-label"><i class="fas fa-terminal" aria-hidden="true"></i> Python</div>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy Python example">Copy</button>
+                <code>import requests, base64
+from PIL import Image
+from io import BytesIO
+
+headers = {"Authorization": "Bearer YOUR_API_KEY"}
+resp = requests.post(
+    "http://localhost:5000/api/v1/enhance",
+    headers=headers,
+    files={"file": open("underwater.jpg", "rb")},
+    data={"strength": "standard", "format": "jpeg"}
+)
+data = resp.json()
+print(f"Degradation: {data['prediction']}")
+print(f"Confidence:  {data['confidence']}%")
+print(f"Improvement: +{data.get('improvement_pct', 'N/A')}%")
+
+img_bytes = base64.b64decode(data["enhanced_image_base64"])
+Image.open(BytesIO(img_bytes)).save("enhanced_output.jpg")</code>
+            </div>
+
+            <div class="sec-label"><i class="fas fa-arrow-right-from-bracket" aria-hidden="true"></i> Response Schema</div>
+            <div class="code-block">
+                <code>{
+  "prediction":           "blue_tint",
+  "confidence":           95.2,
+  "improvement_pct":      34.1,
+  "strength":             "Standard",
+  "enhancement_mode":     "Adaptive Classical Pipeline",
+  "metrics_original":     { "entropy": 6.21, "colorfulness": 18.4, "sharpness": 5.2, "contrast": 38.7, "brightness": 92.1 },
+  "metrics_enhanced":     { "entropy": 7.04, "colorfulness": 42.7, "sharpness": 11.8, "contrast": 52.3, "brightness": 118.5 },
+  "enhanced_image_base64": "/9j/4AAQSkZJRg..."
+}</code>
+            </div>
+
+            <!-- Try it live -->
+            <div class="try-panel">
+                <div class="try-title"><i class="fas fa-play" aria-hidden="true"></i> Try It Live</div>
+                <div class="try-form">
+                    <input type="file" id="tryFile" accept="image/*" class="try-input"
+                           aria-label="Select image to test">
+                    <input type="text" id="tryApiKey" class="try-input"
+                           placeholder="Paste your API key here" aria-label="API key">
+                    <select id="tryStrength" class="try-select" aria-label="Enhancement strength">
+                        <option value="mild">Mild</option>
+                        <option value="standard" selected>Standard</option>
+                        <option value="strong">Strong</option>
+                    </select>
+                    <button class="btn-outline" id="tryBtn" onclick="tryApi()"
+                            style="width:fit-content">
+                        <i class="fas fa-paper-plane" aria-hidden="true"></i> Send Request
+                    </button>
+                </div>
+                <div class="try-result" id="tryResult" aria-live="polite">
+                    <img id="tryImg" alt="Enhanced result preview">
+                    <pre id="tryJson" aria-label="API response JSON"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Endpoint 2: /api/preview -->
+        <div class="endpoint reveal" style="animation-delay:0.1s">
+            <div class="endpoint-hdr">
+                <span class="method post">POST</span>
+                <span class="ep-path">/api/preview</span>
+            </div>
+            <p class="ep-desc">
+                Quick 200px-wide preview. Runs the full pipeline at low resolution (~1–2 s vs 5–15 s full).
+                Requires session cookie authentication (logged-in user).
+            </p>
+            <table class="param-table" aria-label="Preview endpoint parameters">
+                <thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>file <span class="p-req">required</span></td><td>File</td><td>Image file</td></tr>
+                    <tr><td>strength <span class="p-opt">optional</span></td><td>String</td><td><code>mild</code> | <code>standard</code> | <code>strong</code></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Endpoint 3: /batch_enhance -->
+        <div class="endpoint reveal" style="animation-delay:0.15s">
+            <div class="endpoint-hdr">
+                <span class="method post">POST</span>
+                <span class="ep-path">/batch_enhance</span>
+            </div>
+            <p class="ep-desc">
+                Enhance up to 10 images in a single request. Returns JSON array with per-file results
+                including original/enhanced URLs, prediction, and confidence.
+                Requires session cookie authentication.
+            </p>
+            <table class="param-table" aria-label="Batch enhance parameters">
+                <thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>files <span class="p-req">required</span></td><td>File[]</td><td>Up to 10 image files</td></tr>
+                    <tr><td>strength <span class="p-opt">optional</span></td><td>String</td><td><code>mild</code> | <code>standard</code> | <code>strong</code></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Endpoint 4: Gallery delete -->
+        <div class="endpoint reveal" style="animation-delay:0.2s">
+            <div class="endpoint-hdr">
+                <span class="method post">POST</span>
+                <span class="ep-path">/gallery/delete/&lt;filename&gt;</span>
+            </div>
+            <p class="ep-desc">Delete an enhanced image and its paired original from the gallery. Returns JSON with list of deleted files.</p>
+        </div>
+
+        <!-- Endpoint 5: Gallery ZIP -->
+        <div class="endpoint reveal" style="animation-delay:0.25s">
+            <div class="endpoint-hdr">
+                <span class="method get">GET</span>
+                <span class="ep-path">/gallery/download_all</span>
+            </div>
+            <p class="ep-desc">Download all enhanced images in the gallery as a single ZIP archive.</p>
+        </div>
+    </main>
+
+    <footer class="footer-abyssal" role="contentinfo">
+        <p>MobileNetV2 + Adaptive Multi-Scale Fusion &middot; &copy; 2026 AquaVision</p>
+        <a href="{{ url_for('api_dashboard') }}">Manage Keys →</a>
+    </footer>
+
+    <script>
+    function copyCode(btn) {
+        const code = btn.parentElement.querySelector('code').textContent;
+        navigator.clipboard.writeText(code).then(() => {
+            var orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = orig; }, 1500);
+        });
+    }
+
+    function tryApi() {
+        const fileInput = document.getElementById('tryFile');
+        const strength  = document.getElementById('tryStrength').value;
+        const apiKey    = document.getElementById('tryApiKey').value.trim();
+        const btn       = document.getElementById('tryBtn');
+        const resultDiv = document.getElementById('tryResult');
+        const resultImg = document.getElementById('tryImg');
+        const resultJson= document.getElementById('tryJson');
+
+        if (!fileInput.files.length) { alert('Select an image first'); return; }
+        if (!apiKey) { alert('Paste your API key first'); return; }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Processing…';
+        resultDiv.style.display = 'none';
+
+        const fd = new FormData();
+        fd.append('file', fileInput.files[0]);
+        fd.append('strength', strength);
+
+        fetch('/api/v1/enhance', {
+            method: 'POST', body: fd,
+            headers: { 'Authorization': 'Bearer ' + apiKey }
+        }).then(r => r.json()).then(data => {
+            if (data.enhanced_image_base64) {
+                resultImg.src = 'data:image/jpeg;base64,' + data.enhanced_image_base64;
+                resultImg.style.display = 'block';
+            } else { resultImg.style.display = 'none'; }
+            const display = Object.assign({}, data);
+            if (display.enhanced_image_base64) {
+                display.enhanced_image_base64 = display.enhanced_image_base64.substring(0, 40) + '...[truncated]';
+            }
+            resultJson.textContent = JSON.stringify(display, null, 2);
+            resultDiv.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane" aria-hidden="true"></i> Send Request';
+        }).catch(err => {
+            resultJson.textContent = 'Error: ' + err.message;
+            resultImg.style.display = 'none';
+            resultDiv.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane" aria-hidden="true"></i> Send Request';
+        });
+    }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="{{ url_for('static', filename='js/abyssal.js') }}" defer></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').catch(function(){});
+        }
+    </script>
+</body>
+</html>

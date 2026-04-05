@@ -1,0 +1,24 @@
+# AquaVision - Adaptive Quality-Aware Underwater Image Enhancement
+# Core
+Flask>=3.0.0
+numpy>=1.24.0
+Pillow>=10.0.0
+
+# Computer Vision
+opencv-python>=4.8.0
+opencv-contrib-python>=4.8.0
+
+# Deep Learning (MobileNetV2 classification)
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Video Processing
+imageio>=2.31.0
+imageio-ffmpeg>=0.4.9
+
+# Production Server (optional)
+Waitress>=3.0.0
+
+# Environment config
+python-dotenv>=1.0.0
+scipy>=1.10.0
