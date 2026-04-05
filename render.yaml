@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: aquavision
+    name: aquavision-web
     env: docker
     plan: standard # The 'standard' plan provides 2GB RAM which PyTorch/OpenCV needs. 'Free' tier (512MB) will crash on Model Load.
     region: ohio
