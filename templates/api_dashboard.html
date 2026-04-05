@@ -92,6 +92,22 @@
             transition: opacity 0.2s;
         }
         .docs-link:hover { opacity: 0.7; }
+
+        @media (max-width: 600px) {
+            .key-display {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.8rem;
+                padding: 1rem;
+            }
+            .key-actions {
+                flex-direction: column;
+            }
+            .key-actions button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>

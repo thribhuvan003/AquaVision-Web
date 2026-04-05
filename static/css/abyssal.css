@@ -702,3 +702,67 @@ h1, h2, h3, h4, h5, h6 {
   nav, .ticker-bar, footer { display: none; }
   body { background: #fff; color: #000; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   16. MOBILE RESPONSIVENESS (GLOBAL)
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  :root {
+    --text-hero: clamp(2.5rem, 8vw, 4rem);
+    --text-3xl:  1.6rem;
+    --text-4xl:  2.2rem;
+  }
+
+  /* Navigation */
+  .nav-abyssal {
+    flex-direction: column;
+    height: auto;
+    padding: 1rem 5%;
+    gap: 0.8rem;
+  }
+  
+  .nav-links-abyssal {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .nav-links-abyssal a {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  /* Structural Adjustments */
+  .panel, .panel-cyan {
+    padding: 1.25rem;
+  }
+
+  /* Data HUD */
+  .metric-hud {
+    grid-template-columns: 1fr 1fr;
+    border-right: none;
+    border-left: none;
+  }
+  .metric-cell {
+    padding: 1rem 0.5rem;
+  }
+  .metric-cell-value {
+    font-size: 1.5rem;
+  }
+
+  /* Typography */
+  .eyebrow {
+    font-size: 0.55rem;
+  }
+
+  /* Footer */
+  .footer-abyssal {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 1rem;
+    padding: 2rem 5% 3rem;
+  }
+}
+
