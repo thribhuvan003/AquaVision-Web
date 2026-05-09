@@ -1,25 +1,45 @@
-# Virtual environments
-venv/
-env/
+# ─── Secrets & Environment ───
 .env
+*.env
+!.env.example
 
-# Python cache
+# ─── Python Cache ───
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+.Python
 
-# Logs
+# ─── Virtual Environments ───
+venv/
+env/
+.venv/
+
+# ─── Databases (runtime data) ───
+*.db
+*.sqlite
+*.sqlite3
+
+# ─── Logs ───
 *.log
-tunnel.log
-localtunnel.log
-localtunnel-utf8.log
+logs/
 
-# Prompts and Claude files
+# ─── Binaries & Executables ───
+*.exe
+*.dll
+*.so
+
+# ─── Dev / AI Prompt Files ───
 CLAUDE.md
 ultimate_agent_prompt.md
 claude_code_repos/
 docs/logs/
 
-# OS files
+# ─── OS Files ───
 Thumbs.db
 .DS_Store
+
+# ─── IDE ───
+.vscode/
+.idea/
+*.swp
