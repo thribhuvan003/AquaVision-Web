@@ -1,0 +1,25 @@
+# Virtual environments
+venv/
+env/
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+*.log
+tunnel.log
+localtunnel.log
+localtunnel-utf8.log
+
+# Prompts and Claude files
+CLAUDE.md
+ultimate_agent_prompt.md
+claude_code_repos/
+docs/logs/
+
+# OS files
+Thumbs.db
+.DS_Store
