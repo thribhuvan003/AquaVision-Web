@@ -67,7 +67,7 @@ def main():
         ignore_patterns=IGNORE + ["README.md"],
         commit_message="Deploy AquaVision",
     )
-    print(f"[deploy] done → https://huggingface.co/spaces/{repo_id}")
+    print(f"[deploy] done: https://huggingface.co/spaces/{repo_id}")
     print("[deploy] first build takes a few minutes (installing torch + opencv).")
 
 

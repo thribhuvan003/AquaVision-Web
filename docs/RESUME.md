@@ -1,12 +1,12 @@
 # AquaVision — Resume Material
 
 All numbers below are **real and reproducible** (`python -m benchmark.run`).
-Replace `<LIVE_URL>` once the Hugging Face Space is live.
+Replace `https://huggingface.co/spaces/mark2423432/AquaVision` once the Hugging Face Space is live.
 
 ## Resume bullets (pick 2–3)
 
 **Product + impact**
-- Built and deployed **AquaVision** (<LIVE_URL>), a CPU-only underwater image &
+- Built and deployed **AquaVision** (https://huggingface.co/spaces/mark2423432/AquaVision), a CPU-only underwater image &
   video enhancement web app (Flask, PyTorch, OpenCV); a MobileNetV2 classifier
   routes 9 image-degradation types to a classical restoration pipeline that lifts
   image quality by **+8.2 UCIQE** and **+3.6 dB PSNR** on a reproducible 48-image
@@ -27,7 +27,7 @@ Replace `<LIVE_URL>` once the Hugging Face Space is live.
 ## One-liner (if space is tight)
 - **AquaVision** — deployed CPU-only underwater image/video enhancement web app
   (Flask + PyTorch + OpenCV) with a MobileNetV2 degradation router; +8.2 UCIQE /
-  +3.6 dB PSNR on a reproducible benchmark, 16-test CI, live demo at <LIVE_URL>.
+  +3.6 dB PSNR on a reproducible benchmark, 16-test CI, live demo at https://huggingface.co/spaces/mark2423432/AquaVision.
 
 ## Interview talking points (when they open the repo)
 

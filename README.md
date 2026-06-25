@@ -12,7 +12,7 @@ correction to bring back natural colour, contrast, and detail.
 It runs entirely on the **CPU** with classical computer-vision methods plus one
 small neural network — no GPU, no paid AI API.
 
-**🔗 Live demo:** _coming soon (Hugging Face Spaces)_
+**🔗 Live demo:** **[mark2423432/AquaVision on Hugging Face Spaces](https://huggingface.co/spaces/mark2423432/AquaVision)** — running live on free CPU.
 
 ---
 
