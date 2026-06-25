@@ -1295,12 +1295,14 @@ def get_quality_metrics(img):
     """Compute all quality metrics for a PIL image.
     Includes 4 standard metrics + Entropy."""
     arr = np.array(img)
+    # Cast to native Python floats so the values are JSON-serializable
+    # (numpy float32/float64 break jsonify in the REST API routes).
     return {
-        'colorfulness': compute_colorfulness(arr),
-        'sharpness': compute_sharpness(arr),
-        'contrast': compute_contrast(arr),
-        'brightness': compute_brightness(arr),
-        'entropy': compute_entropy(arr)
+        'colorfulness': float(compute_colorfulness(arr)),
+        'sharpness': float(compute_sharpness(arr)),
+        'contrast': float(compute_contrast(arr)),
+        'brightness': float(compute_brightness(arr)),
+        'entropy': float(compute_entropy(arr))
     }
 
 # ────────────────────────────────────────────────────────────────
