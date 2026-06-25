@@ -1,35 +1,38 @@
 FROM python:3.10-slim
 
-# Prevent Python from writing .pyc files
+# Prevent Python from writing .pyc files / buffering output
 ENV PYTHONDONTWRITEBYTECODE=1
-# Prevent Python from buffering stdout/stderr
 ENV PYTHONUNBUFFERED=1
 
-WORKDIR /app
-
-# Install system dependencies required for OpenCV
+# System libraries required for OpenCV
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first to leverage Docker cache
+# Hugging Face Spaces run the container as a non-root user (uid 1000).
+# Create it so the app can write its SQLite DBs and upload folders.
+RUN useradd -m -u 1000 user
+
+WORKDIR /app
+
+# Install deps first (as root) to leverage Docker layer cache.
+# CPU-only PyTorch — avoids the ~2GB CUDA build.
 COPY requirements.txt .
-
-# Install PyTorch CPU directly to save MASSIVE space. (Default Linux pip installs the 2GB+ CUDA version otherwise)
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
-
-# Install the rest of the application requirements
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
-COPY . .
+# Copy app code owned by the runtime user
+COPY --chown=user:user . .
 
-# Ensure all structural directories are present
-RUN mkdir -p static/uploads static/enhanced static/depth static/video_uploads static/video_frames static/video_enhanced
+# Ensure writable runtime directories, owned by the runtime user
+RUN mkdir -p static/uploads static/enhanced static/depth \
+    static/video_uploads static/video_frames static/video_enhanced \
+    && chown -R user:user /app
 
-# Hugging Face Spaces serve on port 7860 by default; app.py reads $PORT.
-# (Render/other hosts override PORT via their own env, so this is just the default.)
+USER user
+
+# Hugging Face Spaces serve on 7860; app.py reads $PORT.
 ENV PORT=7860
 EXPOSE 7860
 
