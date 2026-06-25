@@ -32,6 +32,15 @@ import json
 # ────────────────────────────────────────────────────────────────
 #  FLASK APP SETUP
 # ────────────────────────────────────────────────────────────────
+# Make logging robust to non-ASCII glyphs (the pipeline prints arrows/⚠ in
+# progress messages). Without this, a single log line crashes the worker on a
+# Windows cp1252 console — which previously failed the whole video task.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 app = Flask(__name__)
 _secret = os.environ.get('SECRET_KEY')
 if not _secret:

@@ -45,3 +45,5 @@ Thumbs.db
 *.swp
 
 _smoke_check.py
+_verify_features.py
+_verify_video.py
