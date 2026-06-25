@@ -21,6 +21,7 @@ import numpy as np
 import cv2
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, jsonify, send_file
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 
 import io
 import zipfile
@@ -137,7 +138,7 @@ def register():
             # If the email is unique, insert the new user
             if email.upper() not in email_data_list:
                 query = "INSERT INTO users (name, email, password) VALUES (%s, %s, %s)"
-                values = (name, email, password)  # Include name in the insert query
+                values = (name, email, generate_password_hash(password))  # store a hash, never plaintext
                 executionquery(query, values)
                 return render_template('register.html', message="Successfully Registered!")
             
@@ -171,8 +172,8 @@ def login():
             if user_data:
                 stored_password, name = user_data[0]  # Extract the password and name
                 
-                # Check if password matches (case-insensitive)
-                if password == stored_password:
+                # Verify against the stored password hash
+                if check_password_hash(stored_password, password):
                     # Store the email and name in a session or global variable
                     session['user_email'] = email  # Store in session for security
                     session['user_name'] = name
