@@ -28,6 +28,9 @@ COPY . .
 # Ensure all structural directories are present
 RUN mkdir -p static/uploads static/enhanced static/depth static/video_uploads static/video_frames static/video_enhanced
 
-EXPOSE 5000
+# Hugging Face Spaces serve on port 7860 by default; app.py reads $PORT.
+# (Render/other hosts override PORT via their own env, so this is just the default.)
+ENV PORT=7860
+EXPOSE 7860
 
 CMD ["python", "app.py"]

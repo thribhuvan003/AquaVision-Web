@@ -1,169 +1,150 @@
-# 🌊 AquaVision — SOTA Marine Image & Video Enhancement
+# 🌊 AquaVision — Underwater Image & Video Enhancement
 
-AquaVision is an industry-grade, **State-Of-The-Art (SOTA)** web application for processing, classifying, and mathematically restoring heavily degraded underwater media.
+[![CI](https://github.com/thribhuvan003/AquaVision-Web/actions/workflows/ci.yml/badge.svg)](https://github.com/thribhuvan003/AquaVision-Web/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![Flask](https://img.shields.io/badge/Flask-web%20app-black)
 
-By leveraging a **Hybrid-SOTA Pipeline** (Ancuti Multi-Scale Fusion + Temporal Smoothing + MobileNetV2), AquaVision restores 4K pelagic photography and deep-sea cave videos with zero flickering, running comfortably on CPU infrastructure.
+Underwater photos come out blue-green, hazy, and washed out — water absorbs red
+light and scatters the rest. **AquaVision restores them.** Upload an image or
+video and it figures out *how* the image is degraded, then applies the matching
+correction to bring back natural colour, contrast, and detail.
 
----
+It runs entirely on the **CPU** with classical computer-vision methods plus one
+small neural network — no GPU, no paid AI API.
 
-## 📸 Key Features
-
-- **Abyssal Light Engine** — Detects extreme low-illumination (cave diving) and runs Adaptive Gamma (AGC) to rescue shadow detail without blowing highlights.
-- **Zero-Flicker Video Processing** — T=5 Exponential Moving Average (EMA) temporal memory smooths White Balance, DCP Dehazing, and Auto-Exposure across frames.
-- **Multi-Scale Laplacian Fusion** — Blends color-compensated frames with physical haze-removal to generate explosive 3D contrast.
-- **AI Degradation Routing** — MobileNetV2 (`best_model.pth`) detects 9 water degradation classes (Blue Tint, Green Turbidity, Blur, etc.) and routes to optimised physics algorithms.
-- **Async Video Pipeline** — Video jobs run in background threads with live progress polling; never blocks the server.
-- **Batch Enhancement** — Upload up to 20 images at once; results are zipped and served for download.
-- **API Access** — REST API with key-based auth; dashboard available at `/api-docs`.
-- **Premium UI** — Dark Ocean glassmorphic frontend: GSAP scroll triggers, WebGL fluid simulation, magnetic hover buttons.
+**🔗 Live demo:** _coming soon (Hugging Face Spaces)_
 
 ---
 
-## 🔧 The Mathematical Pipeline
+## Before / after
 
-```text
-Input
-  ↳ 1. Bilateral Pre-Denoise (protects JPEG compression)
-  ↳ 2. Physics-Based Red Channel Recovery (K_R capped at 1.3)
-  ↳ 3. Abyssal Rescue: Adaptive Gamma Illumination Map
-  ↳ 4. Gray World White Balance (Temporally Smoothed)
-  ↳ 5. CLAHE (LAB-Space Contrast, clip=2.0)
-  ↳ 6. Dark Channel Prior Dehazing
-  ↳ 7. Ancuti Multi-Scale Pyramidal Fusion
-  ↳ 8. Proportional LAB Shift
-  ↳ 9. Unsharp Mask & Auto-Exposure Normalisation
-  ↳ 10. Output HD Frame
-```
+![Before and after examples](benchmark/results/grid.png)
+
+_Left: original underwater image. Right: AquaVision output._
 
 ---
 
-## 🚀 Quick Start
+## What it does
 
-### 1. System Dependencies (Required First)
-
-> **⚠️ ffmpeg is a hard dependency for video processing.** Without it, all video uploads will fail silently.
-
-**Windows:**
-```bash
-winget install ffmpeg
-# or download from https://ffmpeg.org/download.html and add to PATH
-```
-
-**macOS:**
-```bash
-brew install ffmpeg
-```
-
-**Linux (Debian/Ubuntu):**
-```bash
-sudo apt update && sudo apt install -y ffmpeg
-```
-
-Verify installation:
-```bash
-ffmpeg -version
-```
+- **Smart correction** — a small **MobileNetV2** model classifies each image into
+  one of 9 degradation types (blue tint, green tint, haze, low light, blur, …) and
+  routes it to the enhancement settings that fit.
+- **Classical enhancement pipeline** — white balance, red-channel recovery,
+  dark-channel dehazing, CLAHE contrast, and multi-scale fusion (Ancuti et al.).
+- **Video support** — enhances videos frame by frame in the background, with live
+  progress you can poll while it runs.
+- **Batch mode** — enhance many images at once and download them as a zip.
+- **REST API** — enhance images programmatically with a Bearer-token key.
+- **Accounts** — register/log in (passwords are hashed), personal gallery, API dashboard.
 
 ---
 
-### 2. Python Environment
+## Does it actually work? (measured results)
+
+Numbers are produced by the reproducible harness in [`benchmark/`](benchmark/) —
+not hand-picked. Run it yourself with `python -m benchmark.run`.
+
+**No-reference** (real underwater photos, 36 images — higher is better):
+
+| Metric | Original | Enhanced | Change |
+|---|---|---|---|
+| UCIQE | 23.16 | **31.33** | **+8.17** |
+| UIQM  | 2.03  | 1.82      | −0.21  |
+
+**Full-reference** (clean photo → simulated underwater → enhance → compared to the
+original, 12 images — higher is better):
+
+| Metric | Degraded input | Enhanced output | Change |
+|---|---|---|---|
+| PSNR (dB) | 9.97 | **13.53** | **+3.57** |
+| SSIM      | 0.704 | **0.748** | **+0.044** |
+
+Enhancement clearly improves colour quality (UCIQE) and restoration accuracy
+(PSNR/SSIM). UIQM dips slightly — reported honestly rather than hidden, since
+colour correction and that metric's sharpness term can pull in opposite directions.
+
+---
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[Upload image/video] --> B[MobileNetV2<br/>classifies degradation]
+    B --> C{Degradation type}
+    C --> D[Matched correction<br/>white balance · dehaze · fusion]
+    D --> E[Quality check<br/>+ adaptive boost]
+    E --> F[Enhanced result<br/>+ quality metrics]
+```
+
+The classifier picks the strategy; the classical pipeline does the restoration; a
+quality check re-runs with stronger settings if the first pass barely changed the image.
+
+---
+
+## Run it locally
 
 Requires **Python 3.10+**.
 
 ```bash
+git clone https://github.com/thribhuvan003/AquaVision-Web.git
+cd AquaVision-Web
+
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+
+# CPU-only PyTorch (smaller, no CUDA download)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
+
+cp .env.example .env          # set SECRET_KEY (any random hex string)
+python app.py                 # serves on http://127.0.0.1:5000
 ```
+
+> Video enhancement uses `imageio-ffmpeg` (bundled). For best results you can also
+> install system `ffmpeg`, but it isn't required to start the app.
 
 ---
 
-### 3. Environment Configuration
+## Tests
 
-Copy and fill in the template:
 ```bash
-cp .env.example .env
+pip install -r requirements-dev.txt
+pytest          # 16 tests: routes, auth, pipeline, API, metrics
 ```
 
-| Variable | Required | Description |
-|---|---|---|
-| `SECRET_KEY` | ✅ Yes | Flask session key. Generate: `python -c "import secrets; print(secrets.token_hex(32))"` |
-| `MAIL_SENDER` | Optional | Gmail address for video-ready email notifications |
-| `MAIL_APP_PASSWORD` | Optional | 16-char Google App Password for the above |
-
-> If `SECRET_KEY` is absent, AquaVision generates a random key at startup — **sessions will not survive a server restart.**
+CI runs the full suite on every push (see the badge above).
 
 ---
 
-### 4. Verify Weights
-
-Ensure `best_model.pth` (≈12 MB) is in the project root alongside `checkpoints/`.
-
----
-
-### 5. Launch
-
-**Development:**
-```bash
-python app.py
-```
-
-**Production (multi-threaded, recommended):**
-```bash
-python -c "
-from waitress import serve
-from app import app
-import os
-port = int(os.environ.get('PORT', 5050))
-print(f'AquaVision running on http://0.0.0.0:{port}')
-serve(app, host='0.0.0.0', port=port, threads=8)
-"
-```
-
-Open **http://127.0.0.1:5050** in your browser.
-
----
-
-## 📁 Project Structure
+## Project structure
 
 ```text
-AquaVision/
-├── app.py                  # Master Flask application & SOTA pipeline
-├── best_model.pth          # MobileNetV2 classification weights (≈12 MB)
-├── checkpoints/            # Additional model checkpoints
-├── database.db             # SQLite — users & API keys
-├── videoTasks.db           # SQLite — async video job state
-├── requirements.txt        # Python dependency manifest
-├── .env                    # Local secrets (never commit)
-├── .env.example            # Template — copy to .env
-├── static/                 # CSS, JS, uploaded media
-│   ├── css/abyssal.css     # Abyssal Design System tokens
-│   └── js/abyssal.js       # Global interactions & animations
-├── templates/              # Jinja2 HTML templates
-│   ├── index.html          # Landing page
-│   ├── home.html           # Dashboard
-│   ├── prediction.html     # Image enhancement
-│   ├── video_prediction.html # Video upload & async tracking
-│   ├── batch.html          # Batch processing
-│   └── ...                 # Gallery, API docs, auth pages
-├── Run_AquaVision.bat      # One-click Windows launcher
-├── DPEM/                   # Depth Prior Enhancement Module
-├── Depth_Anything_V2_main/ # Depth estimation backbone
-└── legacy_and_research/    # Archived R&D notebooks & unused GAN models
+AquaVision-Web/
+├── app.py                 # Flask app: routes, auth, enhancement pipeline, video, API
+├── best_model.pth         # MobileNetV2 degradation classifier (~12 MB)
+├── benchmark/             # Reproducible metrics harness (UIQM/UCIQE, PSNR/SSIM)
+├── tests/                 # pytest suite
+├── templates/             # Jinja2 HTML pages
+├── static/                # CSS, JS, sample/uploaded media
+├── Dockerfile             # Container build (used for deployment)
+├── requirements.txt       # Runtime dependencies
+├── requirements-dev.txt   # + test/benchmark dependencies
+└── legacy_and_research/   # Archived experiments (an unused deep-learning pipeline, notebooks)
 ```
 
 ---
 
-## 🔐 Security Notes
+## Tech stack
 
-- `SECRET_KEY` **must** be set to a secure random value in production.
-- `database.db` and `videoTasks.db` contain user data — **never expose publicly**.
-- The `static/uploads/` directory should be served behind a web server (nginx/caddy) in production, not directly by Flask.
-- Uploaded filenames are UUID-based — no path traversal risk.
+**Python · Flask · PyTorch (MobileNetV2) · OpenCV · NumPy/SciPy · scikit-image · SQLite · Waitress · Docker**
 
 ---
 
-## 📚 Core Academic References
+## References
 
-1. **Ancuti, C. et al. (2012/2018).** *Enhancing underwater images and videos by fusion*
-2. **He, K. et al. (2009).** *Single Image Haze Removal Using Dark Channel Prior*
-3. **Guo, X. et al. (2016).** *LIME: Low-light Image Enhancement via Illumination Map*
-4. **Sandler et al. (2018).** *MobileNetV2: Inverted Residuals and Linear Bottlenecks*
+The enhancement methods are based on published work:
+
+1. Ancuti et al. (2018) — *Color Balance and Fusion for Underwater Image Enhancement*
+2. He et al. (2009) — *Single Image Haze Removal Using Dark Channel Prior*
+3. Sandler et al. (2018) — *MobileNetV2: Inverted Residuals and Linear Bottlenecks*
+4. Panetta et al. (2016) — *Human-Visual-System-Inspired Underwater Image Quality Measure (UIQM)*
+5. Yang & Sowmya (2015) — *An Underwater Color Image Quality Evaluation Metric (UCIQE)*
