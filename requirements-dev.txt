@@ -1,0 +1,4 @@
+# Extra packages for benchmarking and tests (not needed to run the app)
+-r requirements.txt
+scikit-image>=0.22
+pytest>=8.0
