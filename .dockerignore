@@ -24,3 +24,11 @@ static/video_enhanced/*
 !static/video_uploads/.gitkeep
 !static/video_frames/.gitkeep
 !static/video_enhanced/.gitkeep
+
+# Tier2: research code & scratch excluded from deploy image
+legacy_and_research/
+_smoke_check.py
+_salvaged_eval/
+docs/
+tests/
+benchmark/
