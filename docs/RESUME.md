@@ -1,7 +1,7 @@
 # AquaVision — Resume Material
 
 All numbers below are **real and reproducible** (`python -m benchmark.run`).
-Replace `https://huggingface.co/spaces/mark2423432/AquaVision` once the Hugging Face Space is live.
+Live demo: **https://huggingface.co/spaces/mark2423432/AquaVision**
 
 ## Resume bullets (pick 2–3)
 
