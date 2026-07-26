@@ -48,8 +48,17 @@ def main():
         sys.exit("Set HF_TOKEN (a write token from huggingface.co/settings/tokens)")
 
     api = HfApi(token=token)
-    print(f"[deploy] creating Space {repo_id} (docker)…")
-    api.create_repo(repo_id=repo_id, repo_type="space", space_sdk="docker", exist_ok=True)
+    # New Docker Spaces on free cpu-basic may require PRO (402). Existing Spaces can still be updated.
+    try:
+        print(f"[deploy] ensuring Space {repo_id} (docker)…")
+        api.create_repo(repo_id=repo_id, repo_type="space", space_sdk="docker", exist_ok=True)
+    except Exception as exc:
+        msg = str(exc)
+        if "402" in msg or "PRO subscription" in msg or "Payment Required" in msg:
+            print("[deploy] create_repo skipped (HF free tier / Space already exists); uploading into existing Space…")
+            api.space_info(repo_id)  # fail fast if we cannot access it
+        else:
+            raise
 
     # Space needs its own README with the HF metadata header on top.
     with open(os.path.join(REPO_ROOT, "README.md"), encoding="utf-8") as f:
