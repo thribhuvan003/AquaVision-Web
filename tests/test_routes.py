@@ -5,10 +5,13 @@ from conftest import upload
 def test_public_pages(client):
     assert client.get("/").status_code == 200
     assert client.get("/about").status_code == 200
+    # Core enhance is open without sign-in
+    assert client.get("/prediction").status_code == 200
+    assert client.get("/home").status_code == 200
 
 
-def test_gated_route_redirects_when_logged_out(client):
-    assert client.get("/prediction").status_code in (301, 302)
+def test_api_dashboard_still_requires_login(client):
+    assert client.get("/api_dashboard").status_code in (301, 302)
 
 
 def test_register_and_login(client):
