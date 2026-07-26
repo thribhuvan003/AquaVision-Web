@@ -444,15 +444,10 @@
             <span class="nav-logo-dot" aria-hidden="true"></span>
         </a>
         <ul class="nav-links-abyssal" role="list">
-            <li><a href="#pipeline">How It Works</a></li>
-            <li><a href="#modes">9 Modes</a></li>
-            <li><a href="{{ url_for('about') }}">Research</a></li>
-            {% if session.get('user_email') %}
-            <li><a href="{{ url_for('home') }}" class="nav-cta">Dashboard →</a></li>
-            {% else %}
-            <li><a href="{{ url_for('login') }}">Sign In</a></li>
-            <li><a href="{{ url_for('register') }}" class="nav-cta">Get Access →</a></li>
-            {% endif %}
+            <li><a href="#pipeline">How it works</a></li>
+            <li><a href="#modes">Modes</a></li>
+            <li><a href="{{ url_for('about') }}">About</a></li>
+            <li><a href="{{ url_for('prediction') }}" class="nav-cta">Try free →</a></li>
         </ul>
     </nav>
 
@@ -462,42 +457,36 @@
         <div class="hero-content">
             <div class="hero-eyebrow">
                 <span class="hero-eyebrow-line" aria-hidden="true"></span>
-                <span class="hero-eyebrow-text">CPU · classical CV · free demo</span>
+                <span class="hero-eyebrow-text">No account · runs on CPU · free</span>
                 <span class="hero-eyebrow-dot" aria-hidden="true"></span>
             </div>
             <h1 class="hero-title" id="hero-heading">
-                AQUA
-                <span class="hero-title-accent">VISION</span>
+                Clearer
+                <span class="hero-title-accent">underwater</span>
+                photos
             </h1>
             <div class="hero-sub-row">
                 <p class="hero-desc">
-                    MobileNetV2 classifies your underwater image across 9 degradation
-                    modes. A 12-stage physics-guided pipeline restores colour, clarity, and detail.
+                    Water steals red light and blurs detail. Upload a photo — AquaVision
+                    picks how it is degraded and restores colour and contrast. No GPU.
+                    No sign-up.
                 </p>
                 <div class="hero-spec-block">
-                    <div>[CLASS] <strong>9 Degradation Modes</strong></div>
-                    <div>[MODEL] <strong>MobileNetV2 — 93% Accuracy</strong></div>
-                    <div>[OUTPUT] <strong>Lanczos4 Super-Resolution</strong></div>
+                    <div>[PIPELINE] <strong>White balance · dehaze · CLAHE · fusion</strong></div>
+                    <div>[ROUTER] <strong>9 degradation types · MobileNetV2</strong></div>
+                    <div>[HARDWARE] <strong>CPU only · no paid API</strong></div>
                     <div>[METRICS] <strong>UCIQE · UIQM · PSNR · SSIM</strong></div>
                 </div>
             </div>
             <div class="hero-cta-row">
-                {% if session.get('user_email') %}
                 <a href="{{ url_for('prediction') }}" class="btn-primary">
-                    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-                    Enhance Image
+                    <i class="fas fa-image" aria-hidden="true"></i>
+                    Enhance an image
                 </a>
                 <a href="{{ url_for('video_prediction') }}" class="btn-outline">
                     <i class="fas fa-film" aria-hidden="true"></i>
-                    Enhance Video
+                    Enhance video
                 </a>
-                {% else %}
-                <a href="{{ url_for('register') }}" class="btn-primary">
-                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                    Get Started Free
-                </a>
-                <a href="{{ url_for('login') }}" class="btn-outline">Sign In</a>
-                {% endif %}
             </div>
         </div>
     </section>
@@ -714,30 +703,22 @@
 
     <!-- ═══ CTA ═══ -->
     <div class="cta-block reveal">
-        <h2>Ready to see clearly?</h2>
-        <p>Upload your first underwater image and let the pipeline do the work.</p>
-        {% if session.get('user_email') %}
+        <h2>Try it on your photo</h2>
+        <p>No account. Drop an underwater image and download the result.</p>
         <a href="{{ url_for('prediction') }}" class="btn-primary">
-            <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-            Open Enhancement Suite
+            <i class="fas fa-image" aria-hidden="true"></i>
+            Enhance an image
         </a>
-        {% else %}
-        <a href="{{ url_for('register') }}" class="btn-primary">
-            <i class="fas fa-arrow-right" aria-hidden="true"></i>
-            Create Free Account
-        </a>
-        {% endif %}
     </div>
 
     <!-- ═══ FOOTER ═══ -->
     <footer class="footer-abyssal" role="contentinfo">
-        <p>© 2026 AquaVision · B.Tech Project · Adaptive Underwater Image Enhancement</p>
-        <div style="display:flex; gap:1.5rem;">
-            <a href="{{ url_for('about') }}">Research</a>
-            <a href="{{ url_for('login') }}">Sign In</a>
-            {% if session.get('user_email') %}
-            <a href="{{ url_for('api_docs') }}">API Docs</a>
-            {% endif %}
+        <p>© 2026 AquaVision · CPU underwater enhancement</p>
+        <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+            <a href="{{ url_for('about') }}">About</a>
+            <a href="{{ url_for('prediction') }}">Enhance</a>
+            <a href="{{ url_for('api_docs') }}">API</a>
+            <a href="{{ url_for('login') }}">Sign in (optional)</a>
         </div>
     </footer>
 

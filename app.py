@@ -60,6 +60,16 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH  = os.path.join(BASE_DIR, 'database.db')
 CLAUDE_API_KEY = None  # Removed — no external API dependency
 
+
+def current_user_email():
+    """Logged-in email, or guest. Core enhance flow does not require sign-in."""
+    return session.get('user_email') or 'guest'
+
+
+def current_user_name():
+    return session.get('user_name') or 'Guest'
+
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     return conn
@@ -106,14 +116,10 @@ def about():
 
 @app.route('/batch')
 def batch_page():
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
     return render_template('batch.html')
 
 @app.route('/api_docs')
 def api_docs():
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
     return render_template('api_docs.html')
 
 
@@ -196,12 +202,11 @@ def login():
 
 @app.route('/home')
 def home():
-    # Check if user is logged in by verifying session
-    if 'user_email' not in session:
-        return redirect(url_for('login'))  # Redirect to login page if not logged in
-    
-    user_name = session.get('user_name')  # Retrieve user name from session
-    return render_template('home.html', user_name=user_name)
+    return render_template(
+        'home.html',
+        user_name=current_user_name(),
+        is_guest=('user_email' not in session),
+    )
 
 
 
@@ -310,8 +315,6 @@ def _format_report_for_template(raw_report):
 
 @app.route('/model', methods=['GET', 'POST'])
 def model():
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
 
     selected_model = None
     report = None
@@ -1133,9 +1136,6 @@ def predict_underwater_image(image_path):
 
 @app.route('/prediction', methods=["GET", "POST"])
 def prediction():
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
-
     result            = None
     image_filename    = None
     enhanced_filename = None
@@ -1722,8 +1722,6 @@ def process_video_task(task_id, input_path):
 
 @app.route('/video_prediction', methods=['GET', 'POST'])
 def video_prediction():
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
 
     error = None
 
@@ -1751,7 +1749,7 @@ def video_prediction():
             
             conn = get_video_db()
             conn.execute('INSERT INTO video_tasks (id, user_email, original_filename, status, progress, result_path) VALUES (?, ?, ?, ?, ?, ?)',
-                         (short_id, session['user_email'], video_file.filename, 'Processing', 0, ''))
+                         (short_id, current_user_email(), video_file.filename, 'Processing', 0, ''))
             conn.commit()
             conn.close()
             
@@ -1766,18 +1764,14 @@ def video_prediction():
 
 @app.route('/my_videos')
 def my_videos():
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
     conn = get_video_db()
-    tasks = conn.execute('SELECT * FROM video_tasks WHERE user_email=? ORDER BY timestamp DESC', (session['user_email'],)).fetchall()
+    tasks = conn.execute('SELECT * FROM video_tasks WHERE user_email=? ORDER BY timestamp DESC', (current_user_email(),)).fetchall()
     conn.close()
     return render_template('video_gallery.html', tasks=tasks)
 
 @app.route('/video_status/<task_id>')
 def video_status(task_id):
     """Legacy route — redirects to the status page rendered by video_status.html."""
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
     return render_template('video_status.html', task_id=task_id)
 
 @app.route('/api/task_status/<task_id>')
@@ -1785,8 +1779,6 @@ def api_task_status(task_id):
     """JSON polling endpoint consumed by video_status.html every 2.5 s.
     Returns { status, result, enhanced_name } shaped for the frontend.
     """
-    if 'user_email' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
     conn = get_video_db()
     task = conn.execute('SELECT * FROM video_tasks WHERE id=?', (task_id,)).fetchone()
     conn.close()
@@ -1829,8 +1821,6 @@ def api_task_status(task_id):
 @app.route('/view_video_enhanced/<filename>')
 def view_video_enhanced(filename):
     """Stream an enhanced video file for in-browser playback."""
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
     safe = os.path.basename(filename)
     return send_from_directory(VIDEO_ENHANCED_FOLDER, safe, mimetype='video/mp4')
 
@@ -1838,8 +1828,6 @@ def view_video_enhanced(filename):
 @app.route('/download_video/<filename>')
 def download_video(filename):
     """Serve an enhanced video as a download attachment."""
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
     safe = os.path.basename(filename)
     return send_from_directory(VIDEO_ENHANCED_FOLDER, safe, as_attachment=True)
 
@@ -1847,13 +1835,11 @@ def download_video(filename):
 @app.route('/my_videos/delete/<task_id>', methods=['POST'])
 def delete_video_task(task_id):
     """Delete a video task: removes DB record + physical upload & enhanced files."""
-    if 'user_email' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
 
     conn = get_video_db()
     task = conn.execute(
         'SELECT * FROM video_tasks WHERE id=? AND user_email=?',
-        (task_id, session['user_email'])
+        (task_id, current_user_email())
     ).fetchone()
 
     if not task:
@@ -1888,7 +1874,7 @@ def delete_video_task(task_id):
 
     # --- Remove DB record ---
     conn.execute('DELETE FROM video_tasks WHERE id=? AND user_email=?',
-                 (task_id, session['user_email']))
+                 (task_id, current_user_email()))
     conn.commit()
     conn.close()
 
@@ -1897,8 +1883,6 @@ def delete_video_task(task_id):
 
 @app.route('/gallery/delete/<filename>', methods=['POST'])
 def gallery_delete(filename):
-    if 'user_email' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
         orig = filename[2:] if filename.startswith('e_') else filename
         orig_path = os.path.join(app.config['UPLOAD_FOLDER'], orig)
@@ -1911,8 +1895,6 @@ def gallery_delete(filename):
 
 @app.route('/gallery')
 def gallery():
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
     pairs = []
     if os.path.exists(app.config['ENHANCED_FOLDER']):
         files = os.listdir(app.config['ENHANCED_FOLDER'])
@@ -1928,8 +1910,6 @@ def gallery():
 
 @app.route('/gallery/download_all')
 def gallery_download_zip():
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
     import io, zipfile
     memory_file = io.BytesIO()
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -1945,7 +1925,7 @@ def gallery_download_zip():
 def logout():
     session.pop('user_email', None)
     session.pop('user_name', None)
-    return redirect(url_for('login'))
+    return redirect(url_for('index'))
 
 
 # ────────────────────────────────────────────────────────────────
@@ -1957,8 +1937,6 @@ def batch_enhance():
     """Process up to 10 images in one request.
     Returns JSON: { count, results: [{status, filename, prediction, confidence, original_url, enhanced_url}] }
     """
-    if 'user_email' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
 
     files = request.files.getlist('files')
     strength = request.form.get('strength', 'standard')  # mild / standard / strong
@@ -2035,8 +2013,6 @@ def batch_enhance():
 @app.route('/api/v1/download_zip', methods=['POST'])
 def api_download_zip():
     """Accept a JSON list of relative enhanced image URLs and return them as a ZIP."""
-    if 'user_email' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
     try:
         data = request.get_json(force=True)
         urls = data.get('files', []) if data else []
@@ -2064,7 +2040,7 @@ def api_dashboard():
         conn = get_db()
         conn.row_factory = sqlite3.Row
         row = conn.execute('SELECT key FROM api_keys WHERE user_email=? AND active=1 ORDER BY created_at DESC LIMIT 1',
-                           (session['user_email'],)).fetchone()
+                           (current_user_email(),)).fetchone()
         conn.close()
         if row:
             api_key = row['key']
@@ -2077,8 +2053,8 @@ def api_dashboard():
 def api_dashboard_generate():
     """Generate or regenerate an API key for the logged-in user."""
     if 'user_email' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    email = session['user_email']
+        return jsonify({'error': 'Login required'}), 401
+    email = current_user_email()
     new_key = 'aqv_' + secrets.token_hex(24)
     try:
         conn = get_db()
@@ -2103,8 +2079,6 @@ def api_dashboard_generate():
 
 @app.route('/download/<filename>')
 def download_image(filename):
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
     return send_from_directory(app.config['ENHANCED_FOLDER'], filename, as_attachment=True)
 
 
@@ -2138,14 +2112,9 @@ def _validate_api_key(token):
 @app.route('/api/v1/enhance', methods=['POST'])
 def api_v1_enhance():
     """REST API — enhance a single underwater image.
-    Accepts: Bearer token OR logged-in session.
-    Returns JSON with prediction, confidence, metrics, improvement_pct,
-    and the enhanced image as base64-encoded JPEG.
+    Public demo accepts unauthenticated requests. Bearer key still works for clients.
+    Returns JSON with prediction, confidence, metrics, and base64 JPEG.
     """
-    token = _get_bearer_token()
-    if not _validate_api_key(token) and 'user_email' not in session:
-        return jsonify({'error': 'Unauthorized — provide a valid Bearer token'}), 401
-
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
 
@@ -2229,8 +2198,6 @@ def api_preview():
     """Quick 200 px preview — full pipeline at low resolution.
     Requires session cookie (logged-in user). No API key needed.
     """
-    if 'user_email' not in session:
-        return jsonify({'error': 'Login required'}), 401
 
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400

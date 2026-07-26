@@ -195,7 +195,11 @@
             <li><a href="{{ url_for('gallery') }}">Gallery</a></li>
             <li><a href="{{ url_for('about') }}">About</a></li>
             <li><a href="{{ url_for('api_docs') }}">API</a></li>
+            {% if session.get('user_email') %}
             <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
+            {% else %}
+            <li><a href="{{ url_for('index') }}" class="nav-cta">Home →</a></li>
+            {% endif %}
         </ul>
     </nav>
 

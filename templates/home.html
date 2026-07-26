@@ -250,20 +250,24 @@
             <li><a href="{{ url_for('model') }}">Reports</a></li>
             <li><a href="{{ url_for('about') }}">About</a></li>
             <li><a href="{{ url_for('api_docs') }}">API</a></li>
+            {% if session.get('user_email') %}
             <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
+            {% else %}
+            <li><a href="{{ url_for('prediction') }}" class="nav-cta">Enhance →</a></li>
+            {% endif %}
         </ul>
     </nav>
 
-    <div class="page-content">
+    <div class="page-content" id="main-content">
         <!-- Welcome -->
         <div class="dash-welcome">
             <div>
-                <div class="dash-welcome-eyebrow">Dashboard · Active Session</div>
-                <h1>Welcome back,<br>{{ user_name }}</h1>
+                <div class="dash-welcome-eyebrow">{% if is_guest %}Guest · no account needed{% else %}Dashboard{% endif %}</div>
+                <h1>{% if is_guest %}Start here{% else %}Welcome back,{% endif %}<br>{% if not is_guest %}{{ user_name }}{% else %}Enhance without signing in{% endif %}</h1>
             </div>
             <div class="dash-time" id="dash-clock">
                 <strong id="clock-time">--:--:--</strong><br>
-                System Ready · All Modules Online
+                Ready · CPU pipeline
             </div>
         </div>
 
