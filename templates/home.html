@@ -69,6 +69,11 @@
             border: var(--b1);
             margin-bottom: 1px;
         }
+        @media (max-width: 900px) {
+            .feature-grid { grid-template-columns: 1fr; }
+            .dash-welcome { flex-direction: column; margin-bottom: 2rem; }
+            .dash-time { text-align: left; }
+        }
 
         .feature-card {
             background: var(--black);

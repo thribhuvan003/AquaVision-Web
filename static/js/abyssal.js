@@ -22,13 +22,53 @@
     }, { passive: true });
   })();
 
-  /* ── 3. Nav scroll tint ──────────────────────────────── */
+  /* ── 3. Nav scroll tint + mobile menu ───────────────── */
   function initNav() {
     var nav = document.querySelector('.nav-abyssal');
     if (!nav) return;
     window.addEventListener('scroll', function() {
       nav.classList.toggle('scrolled', window.scrollY > 40);
     }, { passive: true });
+
+    var links = nav.querySelector('.nav-links-abyssal');
+    if (links && !nav.querySelector('.nav-toggle')) {
+      if (!links.id) links.id = 'primary-nav';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'nav-toggle';
+      btn.setAttribute('aria-label', 'Open menu');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-controls', links.id);
+      btn.innerHTML = '<span></span><span></span><span></span>';
+      nav.insertBefore(btn, links);
+      btn.addEventListener('click', function() {
+        var open = nav.classList.toggle('nav-open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      });
+      links.querySelectorAll('a').forEach(function(a) {
+        a.addEventListener('click', function() {
+          nav.classList.remove('nav-open');
+          btn.setAttribute('aria-expanded', 'false');
+          btn.setAttribute('aria-label', 'Open menu');
+        });
+      });
+    }
+  }
+
+  /* Skip link for keyboard users */
+  function initSkipLink() {
+    if (document.querySelector('.skip-link')) return;
+    var main = document.getElementById('main-content') ||
+      document.querySelector('main') ||
+      document.querySelector('.page-main, .page-content, .hero-section');
+    if (!main) return;
+    if (!main.id) main.id = 'main-content';
+    var a = document.createElement('a');
+    a.href = '#' + main.id;
+    a.className = 'skip-link';
+    a.textContent = 'Skip to content';
+    document.body.insertBefore(a, document.body.firstChild);
   }
 
   /* ── 4. Reveal System ─────────────────────────────────── */
@@ -310,6 +350,7 @@
 
   /* ── INIT ────────────────────────────────────────────── */
   document.addEventListener('DOMContentLoaded', function() {
+    initSkipLink();
     initNav();
     initReveals();
     initStagger();

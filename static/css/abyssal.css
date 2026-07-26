@@ -707,6 +707,69 @@ h1, h2, h3, h4, h5, h6 {
    16. MOBILE RESPONSIVENESS (GLOBAL)
    ═══════════════════════════════════════════════════════════ */
 
+/* Skip link — keyboard first */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 10000;
+  padding: 0.65rem 1rem;
+  background: var(--cyan);
+  color: #000;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 2px;
+  transition: top 0.15s;
+}
+.skip-link:focus {
+  top: 1rem;
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
+}
+
+/* Mobile menu toggle (injected by abyssal.js) */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  background: transparent;
+  border: var(--b1);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.nav-toggle span {
+  display: block;
+  height: 1.5px;
+  width: 100%;
+  background: var(--off-white);
+  transition: transform 0.2s, opacity 0.2s;
+}
+.nav-abyssal.nav-open .nav-toggle span:nth-child(1) {
+  transform: translateY(6.5px) rotate(45deg);
+}
+.nav-abyssal.nav-open .nav-toggle span:nth-child(2) { opacity: 0; }
+.nav-abyssal.nav-open .nav-toggle span:nth-child(3) {
+  transform: translateY(-6.5px) rotate(-45deg);
+}
+
+/* Touch-friendly controls */
+.btn-primary,
+.btn-outline,
+.btn-ghost,
+.nav-cta {
+  min-height: 44px;
+}
+.form-input {
+  min-height: 48px;
+  font-size: 16px; /* prevents iOS zoom */
+}
+
 @media (max-width: 768px) {
   :root {
     --text-hero: clamp(2.5rem, 8vw, 4rem);
@@ -714,28 +777,84 @@ h1, h2, h3, h4, h5, h6 {
     --text-4xl:  2.2rem;
   }
 
-  /* Navigation */
+  /* Navigation — logo + hamburger; links collapse */
   .nav-abyssal {
-    flex-direction: column;
-    height: auto;
-    padding: 1rem 5%;
-    gap: 0.8rem;
-  }
-  
-  .nav-links-abyssal {
+    flex-direction: row;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.5rem;
+    height: auto;
+    min-height: 56px;
+    padding: 0.5rem 4%;
+    gap: 0;
+    align-items: center;
   }
-  
+
+  .nav-toggle { display: flex; margin-left: auto; }
+
+  .nav-links-abyssal {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.5rem 0 0.75rem;
+    border-top: var(--b0);
+    margin-top: 0.5rem;
+  }
+
+  .nav-abyssal.nav-open .nav-links-abyssal {
+    display: flex;
+  }
+
   .nav-links-abyssal a {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.75rem;
+    padding: 0.85rem 0.6rem;
+    font-size: 0.9rem;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .nav-cta {
+    margin-top: 0.35rem;
+    justify-content: center;
+    text-align: center;
   }
 
   /* Structural Adjustments */
   .panel, .panel-cyan {
     padding: 1.25rem;
+  }
+
+  /* Prediction / enhance page grids */
+  .upload-layout,
+  .comp-grid,
+  .metrics-grid,
+  .feature-grid,
+  .stats-strip {
+    grid-template-columns: 1fr !important;
+  }
+
+  .page-main,
+  .page-content {
+    padding-left: 4% !important;
+    padding-right: 4% !important;
+  }
+
+  .hero-section {
+    min-height: auto !important;
+    padding-top: 6rem !important;
+    padding-bottom: 3rem !important;
+  }
+
+  .hero-cta-row {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .hero-cta-row .btn-primary,
+  .hero-cta-row .btn-outline {
+    width: 100%;
+    justify-content: center;
   }
 
   /* Data HUD */
