@@ -1,0 +1,20 @@
+<nav class="nav-abyssal" role="navigation" aria-label="Main navigation">
+    <a href="{{ url_for('index') }}" class="nav-logo">
+        AquaVision <span class="nav-logo-dot" aria-hidden="true"></span>
+    </a>
+    <ul class="nav-links-abyssal" role="list" id="primary-nav">
+        <li><a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' else '' }}">Home</a></li>
+        <li><a href="{{ url_for('prediction') }}" class="{{ 'active' if request.endpoint == 'prediction' else '' }}">Enhance</a></li>
+        <li><a href="{{ url_for('video_prediction') }}" class="{{ 'active' if request.endpoint in ['video_prediction', 'video_status'] else '' }}">Video</a></li>
+        <li><a href="{{ url_for('batch_page') }}" class="{{ 'active' if request.endpoint == 'batch_page' else '' }}">Batch</a></li>
+        <li><a href="{{ url_for('gallery') }}" class="{{ 'active' if request.endpoint == 'gallery' else '' }}">Gallery</a></li>
+        <li><a href="{{ url_for('about') }}" class="{{ 'active' if request.endpoint == 'about' else '' }}">About</a></li>
+        <li><a href="{{ url_for('api_docs') }}" class="{{ 'active' if request.endpoint in ['api_docs', 'api_dashboard'] else '' }}">API</a></li>
+        {% if session.get('user_email') %}
+        <li><a href="{{ url_for('home') }}" class="{{ 'active' if request.endpoint == 'home' else '' }}">Dashboard</a></li>
+        <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout</a></li>
+        {% else %}
+        <li><a href="{{ url_for('login') }}" class="nav-cta">Sign in</a></li>
+        {% endif %}
+    </ul>
+</nav>

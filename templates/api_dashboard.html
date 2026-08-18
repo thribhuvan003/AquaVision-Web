@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/abyssal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/product.css') }}">
     <style>
         .page-content {
             position: relative; z-index: 1;
@@ -113,19 +114,8 @@
 <body>
 
 
-    <nav class="nav-abyssal" role="navigation" aria-label="Main navigation">
-        <a href="{{ url_for('home') }}" class="nav-logo">
-            AquaVision <span class="nav-logo-dot" aria-hidden="true"></span>
-        </a>
-        <ul class="nav-links-abyssal" role="list">
-            <li><a href="{{ url_for('home') }}">Dashboard</a></li>
-            <li><a href="{{ url_for('prediction') }}">Enhance</a></li>
-            <li><a href="{{ url_for('batch_page') }}">Batch</a></li>
-            <li><a href="{{ url_for('api_dashboard') }}" class="active">API</a></li>
-            <li><a href="{{ url_for('api_docs') }}">Docs</a></li>
-            <li><a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a></li>
-        </ul>
-    </nav>
+    {% include 'partials/nav.html' %}
+
 
     <main class="page-content" id="main-content">
         <div class="ph-eyebrow">Programmatic Access</div>
